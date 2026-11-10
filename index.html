@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAUL & RUN: Mathematical Extraction</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { background: #0a0b10; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        #game-container { display: flex; gap: 20px; background: #12141d; border: 2px solid #00f3ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 25px rgba(0,243,255,0.2); }
+        
+        /* Grid Board */
+        #board-wrapper { display: flex; flex-direction: column; align-items: center; }
+        #board { display: grid; grid-template-columns: repeat(8, 55px); grid-template-rows: repeat(8, 55px); gap: 4px; background: #06070a; padding: 6px; border-radius: 8px; border: 1px solid #222; }
+        .cell { width: 55px; height: 55px; background: #1c1f2c; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 22px; position: relative; }
+        .cell.safehouse { background: #004422; border: 1px solid #00ff66; }
+        .cell.door-locked { background: #442200; border: 1px solid #ff9900; }
+        .cell.door-open { background: #223344; }
+        .cell.wall { background: #08090d; }
+
+        /* Panel Side Control */
+        #side-panel { width: 300px; display: flex; flex-direction: column; justify-content: space-between; }
+        .card { background: #181b26; border: 1px solid rgba(0,243,255,0.3); padding: 15px; border-radius: 8px; margin-bottom: 12px; }
+        h2 { color: #00f3ff; font-size: 18px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        p { font-size: 13px; color: #aaa; margin-bottom: 6px; }
+
+        .stat-val { font-weight: bold; color: #fff; }
+        .badge { background: #ff0055; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+        /* Buttons & Shop */
+        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 8px 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 13px; width: 100%; margin-top: 6px; }
+        .btn:hover { opacity: 0.9; }
+        .btn-shop { background: linear-gradient(135deg, #ff0055, #ff5500); }
+
+        /* Modal Popups (Math Modal) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 99; }
+        .modal-content { background: #12141d; border: 2px solid #00f3ff; width: 340px; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 0 30px rgba(0,243,255,0.4); }
+        .modal h3 { color: #00f3ff; margin-bottom: 10px; }
+        .math-problem { font-size: 22px; font-weight: bold; margin: 15px 0; color: #ffcc00; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; }
+        input[type="number"] { width: 100%; padding: 10px; font-size: 18px; text-align: center; border-radius: 6px; border: 1px solid #00f3ff; background: #0a0b10; color: #fff; margin-bottom: 12px; outline: none; }
+        
+        #controls-hint { font-size: 11px; color: #667; text-align: center; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Papan Game -->
+        <div id="board-wrapper">
+            <h1 style="color: #00f3ff; font-size: 20px; margin-bottom: 10px;">HAUL & RUN</h1>
+            <div id="board"></div>
+            <div id="controls-hint">Guna [W, A, S, D] atau [Anak Panah] untuk bergerak</div>
+        </div>
+
+        <!-- Panel Status & Kedai -->
+        <div id="side-panel">
+            <div>
+                <div class="card">
+                    <h2>Status Pemain</h2>
+                    <p>Nyawa (HP): <span class="stat-val" id="hp-val">100</span></p>
+                    <p>Wang Tunai: <span class="stat-val" style="color:#00ff66;" id="cash-val">$0</span></p>
+                    <p>Beg Muatan: <span class="stat-val" id="bag-val">0 / 3</span> Barang</p>
+                </div>
+
+                <div class="card">
+                    <h2>Kawasan Safehouse</h2>
+                    <p>Hantar barang di petak <span style="color:#00ff66;">Safehouse (🏠)</span> untuk tukar kepada wang tunai!</p>
+                    <button class="btn" onclick="sellCargo()">HANTAR & JUAL BARANG</button>
+                </div>
+
+                <div class="card">
+                    <h2>Kedai Peralatan</h2>
+                    <button class="btn btn-shop" onclick="buyUpgrade('bag')">Beli Beg Besar (+1 Slot) - $50</button>
+                    <button class="btn btn-shop" onclick="buyUpgrade('heal')">Rawat Nyawa (+30 HP) - $30</button>
+                </div>
+            </div>
+
+            <div style="font-size: 11px; color: #556; text-align: center;">
+                Buka Pintu & Timbang Barang memerlukan Pengesahan Matematik!
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Soalan Matematik -->
+    <div class="modal" id="math-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">PENGESAHAN MATEMATIK</h3>
+            <p id="modal-desc">Selesaikan soalan ini untuk teruskan:</p>
+            <div class="math-problem" id="math-question">12 + 15 = ?</div>
+            <input type="number" id="math-answer" placeholder="Jawapan anda..." autofocus>
+            <button class="btn" onclick="submitMathAnswer()">HANTAR JAWAPAN</button>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 8;
+        let boardState = [];
+        
+        // State Pemain
+        let player = { x: 0, y: 0, hp: 100, cash: 0, bagCount: 0, maxBag: 3 };
+        let activeMathTask = null; // Stores current math puzzle callback
+
+        // Simbol Papan
+        // P = Player, S = Safehouse, D = Locked Door, X = Wall, L = Loot/Barang, . = Empty
+        const mapLayout = [
+            ['S', '.', '.', 'X', '.', '.', '.', '.'],
+            ['.', 'X', '.', 'D', '.', 'X', 'L', '.'],
+            ['.', 'X', '.', 'X', '.', 'X', '.', '.'],
+            ['L', 'X', '.', '.', '.', 'D', '.', 'L'],
+            ['.', 'D', 'X', 'X', '.', 'X', 'X', '.'],
+            ['.', '.', '.', 'L', '.', '.', '.', '.'],
+            ['X', 'X', '.', 'X', 'X', 'X', '.', 'D'],
+            ['L', '.', '.', '.', '.', 'L', '.', '.']
+        ];
+
+        function initBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            boardState = JSON.parse(JSON.stringify(mapLayout));
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${r}-${c}`;
+                    boardEl.appendChild(cell);
+                }
+            }
+            render();
+        }
+
+        function render() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cellEl = document.getElementById(`cell-${r}-${c}`);
+                    const type = boardState[r][c];
+                    
+                    cellEl.className = 'cell';
+                    cellEl.innerText = '';
+
+                    if (type === 'X') cellEl.classList.add('wall');
+                    else if (type === 'S') { cellEl.classList.add('safehouse'); cellEl.innerText = '🏠'; }
+                    else if (type === 'D') { cellEl.classList.add('door-locked'); cellEl.innerText = '🔒'; }
+                    else if (type === 'O') { cellEl.classList.add('door-open'); cellEl.innerText = '🚪'; }
+                    else if (type === 'L') cellEl.innerText = '📦';
+
+                    if (player.x === c && player.y === r) {
+                        cellEl.innerText = '🤖';
+                    }
+                }
+            }
+
+            // Update Status UI
+            document.getElementById('hp-val').innerText = player.hp;
+            document.getElementById('cash-val').innerText = `$${player.cash}`;
+            document.getElementById('bag-val').innerText = `${player.bagCount} / ${player.maxBag}`;
+        }
+
+        // Pengendali Pergerakan
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('math-modal').style.display === 'flex') return;
+
+            let newX = player.x;
+            let newY = player.y;
+
+            if (e.key === 'w' || e.key === 'ArrowUp') newY--;
+            if (e.key === 's' || e.key === 'ArrowDown') newY++;
+            if (e.key === 'a' || e.key === 'ArrowLeft') newX--;
+            if (e.key === 'd' || e.key === 'ArrowRight') newX++;
+
+            if (newX >= 0 && newX < GRID_SIZE && newY >= 0 && newY < GRID_SIZE) {
+                const targetTile = boardState[newY][newX];
+
+                if (targetTile === 'X') return; // Dinding
+
+                // Pintu Terkunci
+                if (targetTile === 'D') {
+                    triggerMathQuestion('DOOR', (correct) => {
+                        if (correct) {
+                            boardState[newY][newX] = 'O'; // Buka pintu
+                            player.x = newX;
+                            player.y = newY;
+                        } else {
+                            player.hp -= 10;
+                            alert("Salah! Kejutan elektrik pintu mengenakan 10 kerosakan (HP)!");
+                        }
+                        render();
+                    });
+                    return;
+                }
+
+                // Mengutip Barang (Timbang & Kira)
+                if (targetTile === 'L') {
+                    if (player.bagCount >= player.maxBag) {
+                        alert("Beg anda telah penuh! Hantar barang ke Safehouse dahulu.");
+                        return;
+                    }
+                    triggerMathQuestion('LOOT', (correct) => {
+                        if (correct) {
+                            boardState[newY][newX] = '.'; 
+                            player.bagCount++;
+                            player.x = newX;
+                            player.y = newY;
+                            alert("Barang berjaya ditimbang dan dimasukkan ke dalam beg!");
+                        } else {
+                            alert("Gagal mengesahkan berat barang! Cuba lagi.");
+                        }
+                        render();
+                    });
+                    return;
+                }
+
+                // Petak Biasa / Safehouse / Pintu Terbuka
+                player.x = newX;
+                player.y = newY;
+                render();
+            }
+        });
+
+        // Jana Soalan Matematik
+        function triggerMathQuestion(type, callback) {
+            const modal = document.getElementById('math-modal');
+            const titleEl = document.getElementById('modal-title');
+            const descEl = document.getElementById('modal-desc');
+            const qEl = document.getElementById('math-question');
+            const inputEl = document.getElementById('math-answer');
+
+            inputEl.value = '';
+            let n1, n2, ans;
+
+            if (type === 'DOOR') {
+                titleEl.innerText = "NYAHKUNCI PINTU";
+                descEl.innerText = "Selesaikan persamaan keselamatan pintu:";
+                n1 = Math.floor(Math.random() * 20) + 5;
+                n2 = Math.floor(Math.random() * 20) + 5;
+                ans = n1 + n2;
+                qEl.innerText = `${n1} + ${n2} = ?`;
+            } else if (type === 'LOOT') {
+                titleEl.innerText = "TIMBANG & SAHKAN BARANG";
+                descEl.innerText = "Kira nisbah berat barang untuk dimasukkan ke dalam beg:";
+                n1 = Math.floor(Math.random() * 10) + 2;
+                n2 = Math.floor(Math.random() * 9) + 2;
+                ans = n1 * n2;
+                qEl.innerText = `${n1} × ${n2} kg = ?`;
+            }
+
+            activeMathTask = { ans: ans, callback: callback };
+            modal.style.display = 'flex';
+            inputEl.focus();
+        }
+
+        function submitMathAnswer() {
+            const inputEl = document.getElementById('math-answer');
+            const userAns = parseInt(inputEl.value);
+            const modal = document.getElementById('math-modal');
+
+            modal.style.display = 'none';
+
+            if (activeMathTask) {
+                const isCorrect = userAns === activeMathTask.ans;
+                activeMathTask.callback(isCorrect);
+            }
+        }
+
+        // Jual Barang di Safehouse
+        function sellCargo() {
+            if (boardState[player.y][player.x] !== 'S') {
+                alert("Anda mesti berada di petak Safehouse (🏠) untuk menjual barang!");
+                return;
+            }
+            if (player.bagCount === 0) {
+                alert("Tiada barang di dalam beg anda untuk dijual!");
+                return;
+            }
+
+            const earned = player.bagCount * 30; // $30 setiap barang
+            player.cash += earned;
+            player.bagCount = 0;
+            alert(`Berjaya! Anda menjual semua barang dan mendapat $${earned}!`);
+            render();
+        }
+
+        // Kedai Upgrades
+        function buyUpgrade(type) {
+            if (type === 'bag') {
+                if (player.cash >= 50) {
+                    player.cash -= 50;
+                    player.maxBag += 1;
+                    alert("Beg dinaik taraf! Slot muatan bertambah +1.");
+                } else {
+                    alert("Wang tidak mencukupi ($50 diperlukan).");
+                }
+            } else if (type === 'heal') {
+                if (player.cash >= 30) {
+                    player.cash -= 30;
+                    player.hp = Math.min(100, player.hp + 30);
+                    alert("Nyawa dipulihkan (+30 HP).");
+                } else {
+                    alert("Wang tidak mencukupi ($30 diperlukan).");
+                }
+            }
+            render();
+        }
+
+        initBoard();
+    </script>
+</body>
+</html>
