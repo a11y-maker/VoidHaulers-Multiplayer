@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: FPS Edition</title>
+    <title>HAUL & RUN 3D: Online Extraction</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
@@ -11,10 +11,10 @@
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
         
         /* Reticle / Crosshair First Person */
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(0, 243, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 15; box-shadow: 0 0 8px #00f3ff; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(0, 243, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 15; box-shadow: 0 0 8px #00f3ff; display: none; }
 
         /* UI HUD Overlay */
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; display: none; }
         .interactive { pointer-events: auto; }
 
         #hud { display: flex; justify-content: space-between; width: 100%; }
@@ -22,22 +22,34 @@
         .hud-title { font-size: 11px; color: #88a; text-transform: uppercase; letter-spacing: 1px; }
         .hud-val { font-size: 24px; font-weight: bold; color: #00f3ff; }
 
-        /* Screens & Modals */
-        .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 12, 20, 0.95); border: 2px solid #00f3ff; box-shadow: 0 0 30px rgba(0, 243, 255, 0.3); padding: 30px; border-radius: 12px; text-align: center; width: 400px; backdrop-filter: blur(10px); z-index: 20; }
-        h1 { color: #00f3ff; font-size: 24px; letter-spacing: 2px; margin-bottom: 5px; }
-        h3 { color: #ff0055; font-size: 12px; letter-spacing: 4px; margin-bottom: 18px; text-transform: uppercase; }
+        /* Chat Window Overlay */
+        #chat-window { position: absolute; bottom: 20px; left: 20px; width: 320px; height: 200px; background: rgba(10, 12, 20, 0.85); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 8px; display: flex; flex-direction: column; pointer-events: auto; backdrop-filter: blur(5px); z-index: 20; }
+        #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; color: #ccc; display: flex; flex-direction: column; gap: 6px; }
+        .chat-msg { background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; word-break: break-word; }
+        .chat-msg .sender { font-weight: bold; color: #00f3ff; }
+        #chat-input-container { display: flex; border-top: 1px solid rgba(0, 243, 255, 0.2); }
+        #chat-input { flex: 1; background: transparent; border: none; padding: 8px 10px; color: #fff; font-size: 12px; outline: none; }
+        #chat-send-btn { background: #00f3ff; border: none; color: #000; font-weight: bold; padding: 0 12px; cursor: pointer; font-size: 11px; }
 
-        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 12px 18px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.15s, box-shadow 0.2s; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 15px rgba(0, 243, 255, 0.6); }
+        /* Main Menu / Muka Depan */
+        #main-menu { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, #101424 0%, #050608 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
+        .menu-title { font-size: 48px; font-weight: 900; color: #00f3ff; text-shadow: 0 0 20px rgba(0, 243, 255, 0.6); letter-spacing: 4px; margin-bottom: 5px; }
+        .menu-subtitle { font-size: 14px; color: #ff0055; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 30px; }
+        
+        .menu-card { background: rgba(18, 22, 35, 0.9); border: 1px solid rgba(0, 243, 255, 0.3); padding: 25px; border-radius: 12px; width: 360px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .mode-btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
+        .mode-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(0, 243, 255, 0.5); }
+        .mode-btn.online { background: linear-gradient(135deg, #ff0055, #ff5500); }
+
+        /* Screens & Modals */
+        .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 12, 20, 0.95); border: 2px solid #00f3ff; box-shadow: 0 0 30px rgba(0, 243, 255, 0.3); padding: 30px; border-radius: 12px; text-align: center; width: 400px; backdrop-filter: blur(10px); z-index: 40; display: none; }
+        
+        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 12px 18px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-green { background: linear-gradient(135deg, #00ff66, #009933); color: #000; }
 
         /* Math Modal */
         .math-problem { font-size: 26px; font-weight: bold; margin: 15px 0; color: #ffcc00; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; border: 1px dashed rgba(255,204,0,0.4); }
-        input[type="number"] { width: 100%; padding: 12px; font-size: 20px; text-align: center; border-radius: 6px; border: 1px solid #00f3ff; background: #08090e; color: #fff; margin-bottom: 12px; outline: none; }
-
-        .shop-item { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
-        
-        #instructions { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #00f3ff; background: rgba(0,0,0,0.8); padding: 25px; border-radius: 10px; border: 1px solid #00f3ff; cursor: pointer; z-index: 30; }
+        input[type="number"], input[type="text"] { width: 100%; padding: 12px; font-size: 16px; text-align: center; border-radius: 6px; border: 1px solid #00f3ff; background: #08090e; color: #fff; margin-bottom: 12px; outline: none; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -46,6 +58,27 @@
     <div id="canvas-container"></div>
     <div id="crosshair"></div>
 
+    <!-- MUKA DEPAN / MAIN MENU -->
+    <div id="main-menu">
+        <div class="menu-title">HAUL & RUN</div>
+        <div class="menu-subtitle">3D Mathematical Extraction</div>
+
+        <div class="menu-card">
+            <input type="text" id="player-name-input" placeholder="Masukkan Nama Pemain..." value="Agent_01">
+            <button class="mode-btn" onclick="selectGameMode('solo')">🎮 Solo Player Mode</button>
+            <button class="mode-btn online" onclick="showLobbyMenu()">🌐 Online Multiplayer Mode</button>
+        </div>
+    </div>
+
+    <!-- MULTIPLAYER LOBBY SCREEN -->
+    <div class="overlay-screen interactive" id="lobby-menu">
+        <h2 style="color: #00f3ff; margin-bottom: 15px;">LOBBY MULTIPLAYER</h2>
+        <input type="text" id="room-code-input" placeholder="Masukkan Kod Bilik (cth: REPO123)..." value="ROOM_88">
+        <button class="btn" onclick="joinOnlineRoom()">MASUK / BINA BILIK</button>
+        <button class="btn" style="background: #444; margin-top: 8px;" onclick="hideLobbyMenu()">KEMBALI</button>
+    </div>
+
+    <!-- IN-GAME HUD -->
     <div id="ui-layer">
         <div id="hud">
             <div class="hud-card">
@@ -53,29 +86,30 @@
                 <div class="hud-val" id="hp-val" style="color: #ff0055;">100 HP</div>
             </div>
             <div class="hud-card" style="text-align: center;">
-                <div class="hud-title">Peralatan</div>
-                <div class="hud-val" id="wheelbarrow-status" style="color: #ffcc00; font-size: 16px; margin-top: 5px;">Tiada Wheelbarrow</div>
+                <div class="hud-title">Mod / Peralatan</div>
+                <div class="hud-val" id="wheelbarrow-status" style="color: #ffcc00; font-size: 15px; margin-top: 5px;">Tiada Wheelbarrow</div>
             </div>
             <div class="hud-card" style="text-align: right;">
                 <div class="hud-title">Barang Diangkut</div>
                 <div class="hud-val" id="bag-val">0 / 3</div>
             </div>
         </div>
-    </div>
 
-    <!-- Click to Start Screen (Required for Pointer Lock & Audio) -->
-    <div id="instructions" class="interactive">
-        <h2>TEKAN UNTUK MULA / KONTROL FPS</h2>
-        <p style="color: #ccc; margin-top: 10px; font-size: 14px;">
-            Gunakan <b>W, A, S, D</b> untuk berjalan.<br>
-            Gerakkan <b>Tetikus</b> untuk melihat sekeliling (FPS POV).<br>
-            Cari 🛒 <b>Wheelbarrow</b> di permulaan map untuk kapasiti tanpa had!
-        </p>
+        <!-- TETINGKAP SEMBANG (TEXT CHAT) -->
+        <div id="chat-window">
+            <div id="chat-messages">
+                <div class="chat-msg"><span class="sender">SYSTEM:</span> Selamat datang ke permainan! Gunakan ruang ini untuk bersembang.</div>
+            </div>
+            <div id="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Taip mesej di sini... (Tekan Enter)">
+                <button id="chat-send-btn" onclick="sendChatMessage()">HANTAR</button>
+            </div>
+        </div>
     </div>
 
     <!-- Math Modal Popup -->
-    <div class="overlay-screen interactive" id="math-modal" style="display: none;">
-        <h1 id="math-title" style="font-size: 20px;">PENGESAHAN MATH</h1>
+    <div class="overlay-screen interactive" id="math-modal">
+        <h1 id="math-title" style="font-size: 20px; color: #00f3ff;">PENGESAHAN MATH</h1>
         <p id="math-desc" style="font-size: 12px; color: #aaa; margin-top: 5px;">Selesaikan pengiraan di bawah:</p>
         <div class="math-problem" id="math-question">12 + 15 = ?</div>
         <input type="number" id="math-answer" placeholder="Jawapan..." autofocus>
@@ -83,15 +117,15 @@
     </div>
 
     <!-- Fasa Kedai Screen -->
-    <div class="overlay-screen interactive" id="shop-screen" style="display: none; width: 420px;">
-        <h1>FASA KEDAI & UPGRADE</h1>
-        <h3>Misi Berjaya Dikeluarkan</h3>
+    <div class="overlay-screen interactive" id="shop-screen" style="width: 420px;">
+        <h1 style="color: #00f3ff;">FASA KEDAI & UPGRADE</h1>
+        <h3 style="color: #ff0055; font-size: 12px; margin-bottom: 15px;">Misi Berjaya Dikeluarkan</h3>
         <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">
             Hasil jualan pusingan ini: <b id="earned-cash" style="color:#00ff66;">+$0</b><br>
             Jumlah Wang Tunai: <b id="total-cash" style="color:#00f3ff;">$0</b>
         </p>
 
-        <div class="shop-item">
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <div style="font-weight: bold; font-size: 14px;">Kit Rawatan Medkit (+30 HP)</div>
                 <div style="font-size: 11px; color: #889;">Memulihkan kesihatan watak.</div>
@@ -104,21 +138,25 @@
 
     <script>
         let scene, camera, renderer;
-        let isMathOpen = false, isShopOpen = false;
+        let isMathOpen = false, isShopOpen = false, isChatFocus = false;
         let audioCtx = null;
 
-        // Player & Movement State
+        // Player & Game State
         let player = {
+            name: "Agent_01",
             x: 1.5, z: 1.5,
             pitch: 0, yaw: 0,
             hp: 100, cash: 0,
             bagCount: 0, maxBag: 3,
-            hasWheelbarrow: false
+            hasWheelbarrow: false,
+            isOnline: false,
+            roomCode: ""
         };
 
+        let remotePlayers = {}; // Stores online players
         let keys = { w: false, a: false, s: false, d: false };
         let activeMathTask = null;
-        let colliders = []; // Store bounding boxes for non-lag collisions
+        let colliders = [];
         let lootObjects = [], doorObjects = [], wheelbarrowMesh = null, extractionZone = null;
 
         const GRID_SIZE = 8;
@@ -142,7 +180,6 @@
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
 
             if (type === 'step') {
@@ -151,12 +188,6 @@
                 gain.gain.setValueAtTime(0.03, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
-            } else if (type === 'wheelbarrow') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(80, now);
-                gain.gain.setValueAtTime(0.05, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-                osc.start(now); osc.stop(now + 0.15);
             } else if (type === 'beep') {
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(600, now);
@@ -173,7 +204,83 @@
             }
         }
 
-        function init() {
+        // Muka Depan & Lobby Handling
+        function showLobbyMenu() {
+            document.getElementById('lobby-menu').style.display = 'block';
+        }
+        function hideLobbyMenu() {
+            document.getElementById('lobby-menu').style.display = 'none';
+        }
+
+        function selectGameMode(mode) {
+            const nameInput = document.getElementById('player-name-input').value.trim();
+            if (nameInput) player.name = nameInput;
+
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('ui-layer').style.display = 'flex';
+            document.getElementById('crosshair').style.display = 'block';
+
+            if (mode === 'solo') {
+                player.isOnline = false;
+                addChatMessage("SYSTEM", "Anda bermain dalam mod Solo.");
+            }
+            
+            init3DGame();
+            document.body.requestPointerLock();
+        }
+
+        function joinOnlineRoom() {
+            const code = document.getElementById('room-code-input').value.trim();
+            if (!code) return;
+
+            player.roomCode = code;
+            player.isOnline = true;
+            hideLobbyMenu();
+            selectGameMode('online');
+
+            addChatMessage("SYSTEM", `Berjaya menyambung ke Bilik Online: ${player.roomCode}`);
+            spawnSimulatedOnlinePartner();
+        }
+
+        function spawnSimulatedOnlinePartner() {
+            // Simulasi Rakan Online dalam Bilik
+            const pGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.6, 16);
+            const pMat = new THREE.MeshStandardMaterial({ color: 0xff0055 });
+            const partnerMesh = new THREE.Mesh(pGeo, pMat);
+            partnerMesh.position.set(2.5, 0.8, 1.5);
+            scene.add(partnerMesh);
+
+            remotePlayers["partner1"] = partnerMesh;
+            addChatMessage("SYSTEM", "Pemain 'Agent_Partner' telah menyertai bilik anda!");
+        }
+
+        // System Sembang Teks (Chat)
+        function sendChatMessage() {
+            const inputEl = document.getElementById('chat-input');
+            const msg = inputEl.value.trim();
+            if (msg) {
+                addChatMessage(player.name, msg);
+                inputEl.value = '';
+
+                // Autoreply simulasi jika dalam mod Online
+                if (player.isOnline) {
+                    setTimeout(() => {
+                        addChatMessage("Agent_Partner", "Jom cari barang dekat bilik sebelah!");
+                    }, 1500);
+                }
+            }
+        }
+
+        function addChatMessage(sender, text) {
+            const chatBox = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-msg';
+            msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${text}`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function init3DGame() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
             scene.fog = new THREE.FogExp2(0x050608, 0.03);
@@ -192,7 +299,7 @@
             scene.add(camera);
 
             buildEnvironment();
-            setupPointerLock();
+            setupPointerLockAndChat();
 
             window.addEventListener('keydown', e => handleKey(e, true));
             window.addEventListener('keyup', e => handleKey(e, false));
@@ -204,33 +311,29 @@
         function buildEnvironment() {
             const mapWidth = GRID_SIZE * TILE_SIZE;
             
-            // Lantai & Syiling
             const floorMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.8 });
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.position.set(mapWidth/2, 0, mapWidth/2);
             scene.add(floor);
 
-            // Perimeter Outer Barriers (Sekeliling Map)
-            const barrierMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.2, metalness: 0.8, wireframe: false });
-            const barrierThickness = 1;
-            const barrierHeight = 5;
+            // Perimeter Outer Barriers
+            const barrierMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.2, metalness: 0.8 });
+            const bThickness = 1, bHeight = 5;
 
-            const bNorth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, barrierHeight, barrierThickness), barrierMat);
-            bNorth.position.set(mapWidth/2, barrierHeight/2, -barrierThickness/2);
-            const bSouth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, barrierHeight, barrierThickness), barrierMat);
-            bSouth.position.set(mapWidth/2, barrierHeight/2, mapWidth + barrierThickness/2);
-            const bWest = new THREE.Mesh(new THREE.BoxGeometry(barrierThickness, barrierHeight, mapWidth + 2), barrierMat);
-            bWest.position.set(-barrierThickness/2, barrierHeight/2, mapWidth/2);
-            const bEast = new THREE.Mesh(new THREE.BoxGeometry(barrierThickness, barrierHeight, mapWidth + 2), barrierMat);
-            bEast.position.set(mapWidth + barrierThickness/2, barrierHeight/2, mapWidth/2);
+            const bNorth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, bHeight, bThickness), barrierMat);
+            bNorth.position.set(mapWidth/2, bHeight/2, -bThickness/2);
+            const bSouth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, bHeight, bThickness), barrierMat);
+            bSouth.position.set(mapWidth/2, bHeight/2, mapWidth + bThickness/2);
+            const bWest = new THREE.Mesh(new THREE.BoxGeometry(bThickness, bHeight, mapWidth + 2), barrierMat);
+            bWest.position.set(-bThickness/2, bHeight/2, mapWidth/2);
+            const bEast = new THREE.Mesh(new THREE.BoxGeometry(bThickness, bHeight, mapWidth + 2), barrierMat);
+            bEast.position.set(mapWidth + bThickness/2, bHeight/2, mapWidth/2);
 
             scene.add(bNorth, bSouth, bWest, bEast);
-            [bNorth, bSouth, bWest, bEast].forEach(b => {
-                colliders.push(new THREE.Box3().setFromObject(b));
-            });
+            [bNorth, bSouth, bWest, bEast].forEach(b => colliders.push(new THREE.Box3().setFromObject(b)));
 
-            // Map Layout Interior
+            // Map Interior
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
                     const type = mapLayout[r][c];
@@ -252,7 +355,7 @@
                         );
                         door.position.set(posX, 2, posZ);
                         scene.add(door);
-                        doorObjects.push({ mesh: door, x: posX, z: posZ, locked: true, box: new THREE.Box3().setFromObject(door) });
+                        doorObjects.push({ mesh: door, x: posX, z: posZ, locked: true });
                     } else if (type === 'L') {
                         const box = new THREE.Mesh(
                             new THREE.BoxGeometry(1.2, 1.2, 1.2),
@@ -273,7 +376,7 @@
                 }
             }
 
-            // Wheelbarrow at Start
+            // Wheelbarrow
             createWheelbarrow(2.5, 2.5);
         }
 
@@ -284,35 +387,22 @@
                 new THREE.MeshStandardMaterial({ color: 0xffcc00, metalness: 0.6 })
             );
             body.position.y = 0.5;
-            const wheel = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.3, 0.3, 0.2, 12),
-                new THREE.MeshStandardMaterial({ color: 0x111111 })
-            );
-            wheel.rotation.z = Math.PI/2;
-            wheel.position.set(0.5, 0.3, 0);
-            group.add(body, wheel);
+            group.add(body);
             group.position.set(x, 0, z);
             scene.add(group);
-
             wheelbarrowMesh = { group: group, x: x, z: z, picked: false };
         }
 
-        function setupPointerLock() {
-            const inst = document.getElementById('instructions');
-            inst.addEventListener('click', () => {
-                document.body.requestPointerLock();
-            });
-
-            document.addEventListener('pointerlockchange', () => {
-                if (document.pointerLockElement === document.body) {
-                    inst.style.display = 'none';
-                } else if (!isMathOpen && !isShopOpen) {
-                    inst.style.display = 'block';
-                }
+        function setupPointerLockAndChat() {
+            const chatInput = document.getElementById('chat-input');
+            chatInput.addEventListener('focus', () => { isChatFocus = true; document.exitPointerLock(); });
+            chatInput.addEventListener('blur', () => { isChatFocus = false; });
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
             });
 
             document.addEventListener('mousemove', (e) => {
-                if (document.pointerLockElement !== document.body || isMathOpen || isShopOpen) return;
+                if (document.pointerLockElement !== document.body || isMathOpen || isShopOpen || isChatFocus) return;
                 player.yaw -= e.movementX * 0.002;
                 player.pitch -= e.movementY * 0.002;
                 player.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.pitch));
@@ -320,6 +410,7 @@
         }
 
         function handleKey(e, isDown) {
+            if (isChatFocus) return;
             const k = e.code;
             if (k === 'KeyW') keys.w = isDown;
             if (k === 'KeyS') keys.s = isDown;
@@ -327,9 +418,8 @@
             if (k === 'KeyD') keys.d = isDown;
         }
 
-        let stepTimer = 0;
         function updatePlayerMovement() {
-            if (isMathOpen || isShopOpen || document.pointerLockElement !== document.body) return;
+            if (isMathOpen || isShopOpen || isChatFocus || document.pointerLockElement !== document.body) return;
 
             let moveSpeed = 0.12;
             let dx = 0, dz = 0;
@@ -339,18 +429,16 @@
             if (keys.a) { dx -= Math.cos(player.yaw) * moveSpeed; dz += Math.sin(player.yaw) * moveSpeed; }
             if (keys.d) { dx += Math.cos(player.yaw) * moveSpeed; dz -= Math.sin(player.yaw) * moveSpeed; }
 
-            // Smooth Collision Detection via AABB Bounding Box (No Lag)
             let nextX = player.x + dx;
             let nextZ = player.z + dz;
+
+            // Collision Check
             let playerBox = new THREE.Box3(
                 new THREE.Vector3(nextX - 0.4, 0.1, player.z - 0.4),
                 new THREE.Vector3(nextX + 0.4, 1.8, player.z + 0.4)
             );
-
             let collideX = false;
-            for (let b of colliders) {
-                if (playerBox.intersectsBox(b)) { collideX = true; break; }
-            }
+            for (let b of colliders) { if (playerBox.intersectsBox(b)) { collideX = true; break; } }
             if (!collideX) player.x = nextX;
 
             playerBox.set(
@@ -358,32 +446,20 @@
                 new THREE.Vector3(player.x + 0.4, 1.8, nextZ + 0.4)
             );
             let collideZ = false;
-            for (let b of colliders) {
-                if (playerBox.intersectsBox(b)) { collideZ = true; break; }
-            }
+            for (let b of colliders) { if (playerBox.intersectsBox(b)) { collideZ = true; break; } }
             if (!collideZ) player.z = nextZ;
 
-            // Audio Step
-            if ((dx !== 0 || dz !== 0) && !collideX && !collideZ) {
-                stepTimer++;
-                if (stepTimer % 20 === 0) {
-                    playSound(player.hasWheelbarrow ? 'wheelbarrow' : 'step');
-                }
-            }
-
-            // Camera FPS Update
             camera.position.set(player.x, 1.6, player.z);
             camera.rotation.set(0, 0, 0);
             camera.rotation.y = player.yaw;
             camera.rotation.x = player.pitch;
 
-            // Check Wheelbarrow Pick
+            // Wheelbarrow Pick
             if (wheelbarrowMesh && !wheelbarrowMesh.picked) {
-                let dist = Math.hypot(player.x - wheelbarrowMesh.x, player.z - wheelbarrowMesh.z);
-                if (dist < 1.5) {
+                if (Math.hypot(player.x - wheelbarrowMesh.x, player.z - wheelbarrowMesh.z) < 1.5) {
                     wheelbarrowMesh.picked = true;
                     player.hasWheelbarrow = true;
-                    wheelbarrowMesh.group.position.y = -10; // Hide mesh
+                    wheelbarrowMesh.group.position.y = -10;
                     document.getElementById('wheelbarrow-status').innerText = "🛒 Wheelbarrow (Kapasiti ∞)";
                     document.getElementById('wheelbarrow-status').style.color = "#00ff66";
                     playSound('beep');
@@ -391,51 +467,27 @@
                 }
             }
 
-            // Check Interactions with Doors & Loot
+            // Interactions
             doorObjects.forEach(door => {
-                if (door.locked) {
-                    let dist = Math.hypot(player.x - door.x, player.z - door.z);
-                    if (dist < 1.8) {
-                        triggerMathQuestion('DOOR', (correct) => {
-                            if (correct) {
-                                door.locked = false;
-                                door.mesh.position.y = -10;
-                                playSound('beep');
-                            } else {
-                                player.hp -= 10;
-                                updateUI();
-                            }
-                        });
-                    }
+                if (door.locked && Math.hypot(player.x - door.x, player.z - door.z) < 1.8) {
+                    triggerMathQuestion('DOOR', (correct) => {
+                        if (correct) { door.locked = false; door.mesh.position.y = -10; playSound('beep'); }
+                        else { player.hp -= 10; updateUI(); }
+                    });
                 }
             });
 
             lootObjects.forEach(loot => {
-                if (!loot.collected) {
-                    let dist = Math.hypot(player.x - loot.x, player.z - loot.z);
-                    if (dist < 1.5) {
-                        if (!player.hasWheelbarrow && player.bagCount >= player.maxBag) {
-                            return; // Bag full without wheelbarrow
-                        }
-                        triggerMathQuestion('LOOT', (correct) => {
-                            if (correct) {
-                                loot.collected = true;
-                                loot.mesh.position.y = -10;
-                                player.bagCount++;
-                                playSound('beep');
-                                updateUI();
-                            }
-                        });
-                    }
+                if (!loot.collected && Math.hypot(player.x - loot.x, player.z - loot.z) < 1.5) {
+                    if (!player.hasWheelbarrow && player.bagCount >= player.maxBag) return;
+                    triggerMathQuestion('LOOT', (correct) => {
+                        if (correct) { loot.collected = true; loot.mesh.position.y = -10; player.bagCount++; playSound('beep'); updateUI(); }
+                    });
                 }
             });
 
-            // Check Extraction Zone
-            if (extractionZone) {
-                let dist = Math.hypot(player.x - extractionZone.x, player.z - extractionZone.z);
-                if (dist < 1.5) {
-                    openShopPhase();
-                }
+            if (extractionZone && Math.hypot(player.x - extractionZone.x, player.z - extractionZone.z) < 1.5) {
+                openShopPhase();
             }
         }
 
@@ -443,26 +495,13 @@
             isMathOpen = true;
             document.exitPointerLock();
             const modal = document.getElementById('math-modal');
-            const titleEl = document.getElementById('math-title');
             const qEl = document.getElementById('math-question');
             const inputEl = document.getElementById('math-answer');
 
             inputEl.value = '';
-            let n1, n2, ans;
-
-            if (type === 'DOOR') {
-                titleEl.innerText = "NYAHKUNCI PINTU";
-                n1 = Math.floor(Math.random() * 20) + 5;
-                n2 = Math.floor(Math.random() * 20) + 5;
-                ans = n1 + n2;
-                qEl.innerText = `${n1} + ${n2} = ?`;
-            } else if (type === 'LOOT') {
-                titleEl.innerText = "TIMBANG BARANG";
-                n1 = Math.floor(Math.random() * 9) + 2;
-                n2 = Math.floor(Math.random() * 9) + 2;
-                ans = n1 * n2;
-                qEl.innerText = `${n1} × ${n2} kg = ?`;
-            }
+            let n1 = Math.floor(Math.random() * 12) + 2, n2 = Math.floor(Math.random() * 12) + 2;
+            let ans = type === 'DOOR' ? n1 + n2 : n1 * n2;
+            qEl.innerText = type === 'DOOR' ? `${n1} + ${n2} = ?` : `${n1} × ${n2} kg = ?`;
 
             activeMathTask = { ans: ans, callback: callback };
             modal.style.display = 'block';
@@ -475,9 +514,7 @@
             document.getElementById('math-modal').style.display = 'none';
             isMathOpen = false;
 
-            if (activeMathTask) {
-                activeMathTask.callback(userAns === activeMathTask.ans);
-            }
+            if (activeMathTask) activeMathTask.callback(userAns === activeMathTask.ans);
             document.body.requestPointerLock();
         }
 
@@ -510,18 +547,9 @@
             document.getElementById('shop-screen').style.display = 'none';
             isShopOpen = false;
 
-            // Reset Level Position & Collectibles
-            player.x = 1.5;
-            player.z = 1.5;
-
-            lootObjects.forEach(l => {
-                l.collected = false;
-                l.mesh.position.y = 0.6;
-            });
-            doorObjects.forEach(d => {
-                d.locked = true;
-                d.mesh.position.y = 2;
-            });
+            player.x = 1.5; player.z = 1.5;
+            lootObjects.forEach(l => { l.collected = false; l.mesh.position.y = 0.6; });
+            doorObjects.forEach(d => { d.locked = true; d.mesh.position.y = 2; });
 
             updateUI();
             document.body.requestPointerLock();
@@ -545,8 +573,6 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
-
-        init();
     </script>
 </body>
 </html>
