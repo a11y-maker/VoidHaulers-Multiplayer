@@ -3,226 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN: Mathematical Extraction</title>
+    <title>HAUL & RUN 3D: Mathematical Extraction</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
-        body { background: #0a0b10; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
         
-        #game-container { display: flex; gap: 20px; background: #12141d; border: 2px solid #00f3ff; border-radius: 12px; padding: 20px; box-shadow: 0 0 25px rgba(0,243,255,0.2); }
+        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
         
-        /* Grid Board */
-        #board-wrapper { display: flex; flex-direction: column; align-items: center; }
-        #board { display: grid; grid-template-columns: repeat(8, 55px); grid-template-rows: repeat(8, 55px); gap: 4px; background: #06070a; padding: 6px; border-radius: 8px; border: 1px solid #222; }
-        .cell { width: 55px; height: 55px; background: #1c1f2c; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 22px; position: relative; }
-        .cell.safehouse { background: #004422; border: 1px solid #00ff66; }
-        .cell.door-locked { background: #442200; border: 1px solid #ff9900; }
-        .cell.door-open { background: #223344; }
-        .cell.wall { background: #08090d; }
+        /* UI HUD Overlay */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; }
+        .interactive { pointer-events: auto; }
 
-        /* Panel Side Control */
-        #side-panel { width: 300px; display: flex; flex-direction: column; justify-content: space-between; }
-        .card { background: #181b26; border: 1px solid rgba(0,243,255,0.3); padding: 15px; border-radius: 8px; margin-bottom: 12px; }
-        h2 { color: #00f3ff; font-size: 18px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-        p { font-size: 13px; color: #aaa; margin-bottom: 6px; }
+        #hud { display: flex; justify-content: space-between; width: 100%; }
+        .hud-card { background: rgba(10, 12, 18, 0.85); border: 1px solid rgba(0, 243, 255, 0.4); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(8px); box-shadow: 0 0 15px rgba(0,0,0,0.8); }
+        .hud-title { font-size: 11px; color: #88a; text-transform: uppercase; letter-spacing: 1px; }
+        .hud-val { font-size: 24px; font-weight: bold; color: #00f3ff; }
 
-        .stat-val { font-weight: bold; color: #fff; }
-        .badge { background: #ff0055; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        /* Screens & Modals */
+        .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 12, 20, 0.95); border: 2px solid #00f3ff; box-shadow: 0 0 30px rgba(0, 243, 255, 0.3); padding: 30px; border-radius: 12px; text-align: center; width: 380px; backdrop-filter: blur(10px); z-index: 20; }
+        h1 { color: #00f3ff; font-size: 26px; letter-spacing: 2px; margin-bottom: 5px; }
+        h3 { color: #ff0055; font-size: 12px; letter-spacing: 4px; margin-bottom: 20px; text-transform: uppercase; }
 
-        /* Buttons & Shop */
-        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 8px 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 13px; width: 100%; margin-top: 6px; }
-        .btn:hover { opacity: 0.9; }
-        .btn-shop { background: linear-gradient(135deg, #ff0055, #ff5500); }
+        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 12px 18px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.15s, box-shadow 0.2s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 15px rgba(0, 243, 255, 0.6); }
+        .btn-green { background: linear-gradient(135deg, #00ff66, #009933); color: #000; }
 
-        /* Modal Popups (Math Modal) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 99; }
-        .modal-content { background: #12141d; border: 2px solid #00f3ff; width: 340px; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 0 30px rgba(0,243,255,0.4); }
-        .modal h3 { color: #00f3ff; margin-bottom: 10px; }
-        .math-problem { font-size: 22px; font-weight: bold; margin: 15px 0; color: #ffcc00; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; }
-        input[type="number"] { width: 100%; padding: 10px; font-size: 18px; text-align: center; border-radius: 6px; border: 1px solid #00f3ff; background: #0a0b10; color: #fff; margin-bottom: 12px; outline: none; }
+        /* Math Modal */
+        .math-problem { font-size: 26px; font-weight: bold; margin: 15px 0; color: #ffcc00; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; border: 1px dashed rgba(255,204,0,0.4); }
+        input[type="number"] { width: 100%; padding: 12px; font-size: 20px; text-align: center; border-radius: 6px; border: 1px solid #00f3ff; background: #08090e; color: #fff; margin-bottom: 12px; outline: none; }
+
+        /* Shop Item Row */
+        .shop-item { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .shop-item-title { font-weight: bold; font-size: 14px; color: #fff; }
+        .shop-item-desc { font-size: 11px; color: #889; }
         
-        #controls-hint { font-size: 11px; color: #667; text-align: center; margin-top: 8px; }
+        #controls-hint { font-size: 11px; color: #778; position: absolute; bottom: 20px; width: 100%; text-align: center; }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="game-container">
-        <!-- Papan Game -->
-        <div id="board-wrapper">
-            <h1 style="color: #00f3ff; font-size: 20px; margin-bottom: 10px;">HAUL & RUN</h1>
-            <div id="board"></div>
-            <div id="controls-hint">Guna [W, A, S, D] atau [Anak Panah] untuk bergerak</div>
-        </div>
+    <div id="canvas-container"></div>
 
-        <!-- Panel Status & Kedai -->
-        <div id="side-panel">
-            <div>
-                <div class="card">
-                    <h2>Status Pemain</h2>
-                    <p>Nyawa (HP): <span class="stat-val" id="hp-val">100</span></p>
-                    <p>Wang Tunai: <span class="stat-val" style="color:#00ff66;" id="cash-val">$0</span></p>
-                    <p>Beg Muatan: <span class="stat-val" id="bag-val">0 / 3</span> Barang</p>
-                </div>
-
-                <div class="card">
-                    <h2>Kawasan Safehouse</h2>
-                    <p>Hantar barang di petak <span style="color:#00ff66;">Safehouse (🏠)</span> untuk tukar kepada wang tunai!</p>
-                    <button class="btn" onclick="sellCargo()">HANTAR & JUAL BARANG</button>
-                </div>
-
-                <div class="card">
-                    <h2>Kedai Peralatan</h2>
-                    <button class="btn btn-shop" onclick="buyUpgrade('bag')">Beli Beg Besar (+1 Slot) - $50</button>
-                    <button class="btn btn-shop" onclick="buyUpgrade('heal')">Rawat Nyawa (+30 HP) - $30</button>
-                </div>
+    <div id="ui-layer">
+        <!-- HUD Utama semasa Misi -->
+        <div id="hud">
+            <div class="hud-card">
+                <div class="hud-title">Status Kesihatan</div>
+                <div class="hud-val" id="hp-val" style="color: #ff0055;">100 HP</div>
             </div>
-
-            <div style="font-size: 11px; color: #556; text-align: center;">
-                Buka Pintu & Timbang Barang memerlukan Pengesahan Matematik!
+            <div class="hud-card" style="text-align: right;">
+                <div class="hud-title">Muatan Beg</div>
+                <div class="hud-val" id="bag-val">0 / 3</div>
             </div>
         </div>
+
+        <div id="controls-hint">Guna [W, A, S, D] atau [Anak Panah] untuk mengawal pergerakan 3D</div>
     </div>
 
-    <!-- Modal Soalan Matematik -->
-    <div class="modal" id="math-modal">
-        <div class="modal-content">
-            <h3 id="modal-title">PENGESAHAN MATEMATIK</h3>
-            <p id="modal-desc">Selesaikan soalan ini untuk teruskan:</p>
-            <div class="math-problem" id="math-question">12 + 15 = ?</div>
-            <input type="number" id="math-answer" placeholder="Jawapan anda..." autofocus>
-            <button class="btn" onclick="submitMathAnswer()">HANTAR JAWAPAN</button>
+    <!-- Math Modal Popup -->
+    <div class="overlay-screen interactive" id="math-modal" style="display: none;">
+        <h1 id="math-title" style="font-size: 20px;">PENGESAHAN MATH</h1>
+        <p id="math-desc" style="font-size: 12px; color: #aaa; margin-top: 5px;">Selesaikan pengiraan di bawah:</p>
+        <div class="math-problem" id="math-question">12 + 15 = ?</div>
+        <input type="number" id="math-answer" placeholder="Jawapan anda..." autofocus>
+        <button class="btn" onclick="submitMathAnswer()">HANTAR JAWAPAN</button>
+    </div>
+
+    # FASA KEDAI (Hanya muncul selepas tamat pusingan)
+    <div class="overlay-screen interactive" id="shop-screen" style="display: none; width: 420px;">
+        <h1>FASA KEDAI & UPGRADE</h1>
+        <h3>Misi Berjaya Dikeluarkan</h3>
+        <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">
+            Hasil jualan barangan loot pusingan ini: <b id="earned-cash" style="color:#00ff66;">+$0</b><br>
+            Jumlah Wang Tunai: <b id="total-cash" style="color:#00f3ff;">$0</b>
+        </p>
+
+        <div class="shop-item">
+            <div>
+                <div class="shop-item-title">Beg Muatan Ekstra (+1 Slot)</div>
+                <div class="shop-item-desc">Membolehkan anda membawa lebih banyak barang.</div>
+            </div>
+            <button class="btn" style="width: 90px; margin: 0; padding: 8px;" onclick="buyUpgrade('bag')">$50</button>
         </div>
+
+        <div class="shop-item">
+            <div>
+                <div class="shop-item-title">Kit Rawatan Medkit (+30 HP)</div>
+                <div class="shop-item-desc">Memulihkan nyawa untuk misi seterusnya.</div>
+            </div>
+            <button class="btn" style="width: 90px; margin: 0; padding: 8px;" onclick="buyUpgrade('heal')">$30</button>
+        </div>
+
+        <button class="btn btn-green" style="margin-top: 15px;" onclick="startNextRun()">MULA PUSINGAN SETERUSNYA</button>
     </div>
 
     <script>
-        const GRID_SIZE = 8;
-        let boardState = [];
-        
-        // State Pemain
-        let player = { x: 0, y: 0, hp: 100, cash: 0, bagCount: 0, maxBag: 3 };
-        let activeMathTask = null; // Stores current math puzzle callback
+        let scene, camera, renderer;
+        let playerMesh, playerLight;
+        let mapObjects = [];
+        let isMathOpen = false;
+        let isShopOpen = false;
 
-        // Simbol Papan
-        // P = Player, S = Safehouse, D = Locked Door, X = Wall, L = Loot/Barang, . = Empty
+        // State Pemain
+        let player = { x: 0, z: 0, hp: 100, cash: 0, bagCount: 0, maxBag: 3, speed: 0.12 };
+        let currentRunEarned = 0;
+        let activeMathTask = null;
+        let keys = { w: false, a: false, s: false, d: false };
+
+        // Grid Map (8x8)
+        // P = Start, S = Extraction/Safehouse, D = Locked Door, X = Wall, L = Loot Box
         const mapLayout = [
-            ['S', '.', '.', 'X', '.', '.', '.', '.'],
+            ['P', '.', '.', 'X', '.', '.', '.', '.'],
             ['.', 'X', '.', 'D', '.', 'X', 'L', '.'],
             ['.', 'X', '.', 'X', '.', 'X', '.', '.'],
             ['L', 'X', '.', '.', '.', 'D', '.', 'L'],
             ['.', 'D', 'X', 'X', '.', 'X', 'X', '.'],
             ['.', '.', '.', 'L', '.', '.', '.', '.'],
             ['X', 'X', '.', 'X', 'X', 'X', '.', 'D'],
-            ['L', '.', '.', '.', '.', 'L', '.', '.']
+            ['L', '.', '.', '.', '.', 'L', '.', 'S']
         ];
+        const GRID_SIZE = 8;
+        const TILE_SIZE = 3;
 
-        function initBoard() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            boardState = JSON.parse(JSON.stringify(mapLayout));
+        function init3DEngine() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x050608, 0.04);
 
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.id = `cell-${r}-${c}`;
-                    boardEl.appendChild(cell);
-                }
-            }
-            render();
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+            scene.add(ambientLight);
+
+            // Bina Bilik / Peta 3D
+            buildMap();
+
+            // Watak Pemain 3D
+            const pGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.6, 16);
+            const pMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.3, metalness: 0.8 });
+            playerMesh = new THREE.Mesh(pGeo, pMat);
+            playerMesh.position.set(0, 0.8, 0);
+            scene.add(playerMesh);
+
+            playerLight = new THREE.PointLight(0x00f3ff, 1.5, 10);
+            playerLight.position.set(0, 2, 0);
+            scene.add(playerLight);
+
+            window.addEventListener('keydown', e => handleKey(e, true));
+            window.addEventListener('keyup', e => handleKey(e, false));
+            window.addEventListener('resize', onWindowResize);
+
+            animate();
         }
 
-        function render() {
+        function buildMap() {
+            const floorGeo = new THREE.PlaneGeometry(GRID_SIZE * TILE_SIZE, GRID_SIZE * TILE_SIZE);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.8 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set((GRID_SIZE * TILE_SIZE)/2 - TILE_SIZE/2, 0, (GRID_SIZE * TILE_SIZE)/2 - TILE_SIZE/2);
+            scene.add(floor);
+
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
-                    const cellEl = document.getElementById(`cell-${r}-${c}`);
-                    const type = boardState[r][c];
-                    
-                    cellEl.className = 'cell';
-                    cellEl.innerText = '';
+                    const type = mapLayout[r][c];
+                    const posX = c * TILE_SIZE;
+                    const posZ = r * TILE_SIZE;
 
-                    if (type === 'X') cellEl.classList.add('wall');
-                    else if (type === 'S') { cellEl.classList.add('safehouse'); cellEl.innerText = '🏠'; }
-                    else if (type === 'D') { cellEl.classList.add('door-locked'); cellEl.innerText = '🔒'; }
-                    else if (type === 'O') { cellEl.classList.add('door-open'); cellEl.innerText = '🚪'; }
-                    else if (type === 'L') cellEl.innerText = '📦';
-
-                    if (player.x === c && player.y === r) {
-                        cellEl.innerText = '🤖';
+                    if (type === 'X') {
+                        // Dinding 3D
+                        const wallGeo = new THREE.BoxGeometry(TILE_SIZE, 3, TILE_SIZE);
+                        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1a1d28, roughness: 0.5 });
+                        const wall = new THREE.Mesh(wallGeo, wallMat);
+                        wall.position.set(posX, 1.5, posZ);
+                        scene.add(wall);
+                        mapObjects.push({ type: 'WALL', x: posX, z: posZ, mesh: wall });
+                    } else if (type === 'D') {
+                        // Pintu Terkunci
+                        const doorGeo = new THREE.BoxGeometry(TILE_SIZE, 3, 0.3);
+                        const doorMat = new THREE.MeshStandardMaterial({ color: 0xff9900, roughness: 0.4 });
+                        const door = new THREE.Mesh(doorGeo, doorMat);
+                        door.position.set(posX, 1.5, posZ);
+                        scene.add(door);
+                        mapObjects.push({ type: 'DOOR', x: posX, z: posZ, mesh: door, locked: true });
+                    } else if (type === 'L') {
+                        // Peti Loot 3D
+                        const boxGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+                        const boxMat = new THREE.MeshStandardMaterial({ color: 0xff0055, metalness: 0.5 });
+                        const box = new THREE.Mesh(boxGeo, boxMat);
+                        box.position.set(posX, 0.6, posZ);
+                        scene.add(box);
+                        mapObjects.push({ type: 'LOOT', x: posX, z: posZ, mesh: box, collected: false });
+                    } else if (type === 'S') {
+                        // Zon Extraction / Safehouse
+                        const padGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.1, 16);
+                        const padMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+                        const pad = new THREE.Mesh(padGeo, padMat);
+                        pad.position.set(posX, 0.05, posZ);
+                        scene.add(pad);
+                        mapObjects.push({ type: 'EXTRACTION', x: posX, z: posZ });
                     }
                 }
             }
-
-            // Update Status UI
-            document.getElementById('hp-val').innerText = player.hp;
-            document.getElementById('cash-val').innerText = `$${player.cash}`;
-            document.getElementById('bag-val').innerText = `${player.bagCount} / ${player.maxBag}`;
         }
 
-        // Pengendali Pergerakan
-        window.addEventListener('keydown', (e) => {
-            if (document.getElementById('math-modal').style.display === 'flex') return;
+        function handleKey(e, isDown) {
+            if (isMathOpen || isShopOpen) return;
+            const k = e.code;
+            if (k === 'KeyW' || k === 'ArrowUp') keys.w = isDown;
+            if (k === 'KeyS' || k === 'ArrowDown') keys.s = isDown;
+            if (k === 'KeyA' || k === 'ArrowLeft') keys.a = isDown;
+            if (k === 'KeyD' || k === 'ArrowRight') keys.d = isDown;
+        }
 
-            let newX = player.x;
-            let newY = player.y;
+        function updatePlayerLogic() {
+            if (isMathOpen || isShopOpen) return;
 
-            if (e.key === 'w' || e.key === 'ArrowUp') newY--;
-            if (e.key === 's' || e.key === 'ArrowDown') newY++;
-            if (e.key === 'a' || e.key === 'ArrowLeft') newX--;
-            if (e.key === 'd' || e.key === 'ArrowRight') newX++;
+            let moveX = 0, moveZ = 0;
+            if (keys.w) moveZ -= player.speed;
+            if (keys.s) moveZ += player.speed;
+            if (keys.a) moveX -= player.speed;
+            if (keys.d) moveX += player.speed;
 
-            if (newX >= 0 && newX < GRID_SIZE && newY >= 0 && newY < GRID_SIZE) {
-                const targetTile = boardState[newY][newX];
+            let nextX = player.x + moveX;
+            let nextZ = player.z + moveZ;
 
-                if (targetTile === 'X') return; // Dinding
+            // Semak Pelanggaran (Collision Check)
+            mapObjects.forEach(obj => {
+                let dist = Math.hypot(nextX - obj.x, nextZ - obj.z);
 
-                // Pintu Terkunci
-                if (targetTile === 'D') {
+                if (obj.type === 'WALL' && dist < 1.8) {
+                    nextX = player.x; nextZ = player.z;
+                }
+
+                if (obj.type === 'DOOR' && obj.locked && dist < 1.6) {
+                    nextX = player.x; nextZ = player.z;
                     triggerMathQuestion('DOOR', (correct) => {
                         if (correct) {
-                            boardState[newY][newX] = 'O'; // Buka pintu
-                            player.x = newX;
-                            player.y = newY;
+                            obj.locked = false;
+                            obj.mesh.position.y = -5; // Sembunyikan pintu apabila terbuka
                         } else {
                             player.hp -= 10;
-                            alert("Salah! Kejutan elektrik pintu mengenakan 10 kerosakan (HP)!");
+                            updateUI();
                         }
-                        render();
                     });
-                    return;
                 }
 
-                // Mengutip Barang (Timbang & Kira)
-                if (targetTile === 'L') {
+                if (obj.type === 'LOOT' && !obj.collected && dist < 1.4) {
                     if (player.bagCount >= player.maxBag) {
-                        alert("Beg anda telah penuh! Hantar barang ke Safehouse dahulu.");
-                        return;
+                        alert("Beg anda penuh! Sila menuju ke Zon Extraction (🏠).");
+                        nextX = player.x; nextZ = player.z;
+                    } else {
+                        nextX = player.x; nextZ = player.z;
+                        triggerMathQuestion('LOOT', (correct) => {
+                            if (correct) {
+                                obj.collected = true;
+                                obj.mesh.position.y = -5;
+                                player.bagCount++;
+                                updateUI();
+                            }
+                        });
                     }
-                    triggerMathQuestion('LOOT', (correct) => {
-                        if (correct) {
-                            boardState[newY][newX] = '.'; 
-                            player.bagCount++;
-                            player.x = newX;
-                            player.y = newY;
-                            alert("Barang berjaya ditimbang dan dimasukkan ke dalam beg!");
-                        } else {
-                            alert("Gagal mengesahkan berat barang! Cuba lagi.");
-                        }
-                        render();
-                    });
-                    return;
                 }
 
-                // Petak Biasa / Safehouse / Pintu Terbuka
-                player.x = newX;
-                player.y = newY;
-                render();
-            }
-        });
+                // Masuk ke Zon Extraction -> Pergi ke Kedai
+                if (obj.type === 'EXTRACTION' && dist < 1.2) {
+                    openShopPhase();
+                }
+            });
 
-        // Jana Soalan Matematik
+            player.x = nextX;
+            player.z = nextZ;
+
+            playerMesh.position.set(player.x, 0.8, player.z);
+            playerLight.position.set(player.x, 2, player.z);
+
+            // Kamera Mengikut Watak
+            camera.position.set(player.x, player.z + 8, player.z + 9);
+            camera.lookAt(player.x, 0, player.z);
+        }
+
         function triggerMathQuestion(type, callback) {
+            isMathOpen = true;
             const modal = document.getElementById('math-modal');
-            const titleEl = document.getElementById('modal-title');
-            const descEl = document.getElementById('modal-desc');
+            const titleEl = document.getElementById('math-title');
             const qEl = document.getElementById('math-question');
             const inputEl = document.getElementById('math-answer');
 
@@ -231,14 +301,12 @@
 
             if (type === 'DOOR') {
                 titleEl.innerText = "NYAHKUNCI PINTU";
-                descEl.innerText = "Selesaikan persamaan keselamatan pintu:";
-                n1 = Math.floor(Math.random() * 20) + 5;
-                n2 = Math.floor(Math.random() * 20) + 5;
+                n1 = Math.floor(Math.random() * 25) + 10;
+                n2 = Math.floor(Math.random() * 25) + 10;
                 ans = n1 + n2;
                 qEl.innerText = `${n1} + ${n2} = ?`;
             } else if (type === 'LOOT') {
                 titleEl.innerText = "TIMBANG & SAHKAN BARANG";
-                descEl.innerText = "Kira nisbah berat barang untuk dimasukkan ke dalam beg:";
                 n1 = Math.floor(Math.random() * 10) + 2;
                 n2 = Math.floor(Math.random() * 9) + 2;
                 ans = n1 * n2;
@@ -246,64 +314,83 @@
             }
 
             activeMathTask = { ans: ans, callback: callback };
-            modal.style.display = 'flex';
-            inputEl.focus();
+            modal.style.display = 'block';
+            setTimeout(() => inputEl.focus(), 100);
         }
 
         function submitMathAnswer() {
             const inputEl = document.getElementById('math-answer');
             const userAns = parseInt(inputEl.value);
-            const modal = document.getElementById('math-modal');
-
-            modal.style.display = 'none';
+            document.getElementById('math-modal').style.display = 'none';
+            isMathOpen = false;
 
             if (activeMathTask) {
-                const isCorrect = userAns === activeMathTask.ans;
-                activeMathTask.callback(isCorrect);
+                activeMathTask.callback(userAns === activeMathTask.ans);
             }
         }
 
-        // Jual Barang di Safehouse
-        function sellCargo() {
-            if (boardState[player.y][player.x] !== 'S') {
-                alert("Anda mesti berada di petak Safehouse (🏠) untuk menjual barang!");
-                return;
-            }
-            if (player.bagCount === 0) {
-                alert("Tiada barang di dalam beg anda untuk dijual!");
-                return;
-            }
-
-            const earned = player.bagCount * 30; // $30 setiap barang
-            player.cash += earned;
+        function openShopPhase() {
+            isShopOpen = true;
+            currentRunEarned = player.bagCount * 30; // $30 setiap barang
+            player.cash += currentRunEarned;
             player.bagCount = 0;
-            alert(`Berjaya! Anda menjual semua barang dan mendapat $${earned}!`);
-            render();
+
+            document.getElementById('earned-cash').innerText = `+$${currentRunEarned}`;
+            document.getElementById('total-cash').innerText = `$${player.cash}`;
+            document.getElementById('shop-screen').style.display = 'block';
+            updateUI();
         }
 
-        // Kedai Upgrades
         function buyUpgrade(type) {
-            if (type === 'bag') {
-                if (player.cash >= 50) {
-                    player.cash -= 50;
-                    player.maxBag += 1;
-                    alert("Beg dinaik taraf! Slot muatan bertambah +1.");
-                } else {
-                    alert("Wang tidak mencukupi ($50 diperlukan).");
-                }
-            } else if (type === 'heal') {
-                if (player.cash >= 30) {
-                    player.cash -= 30;
-                    player.hp = Math.min(100, player.hp + 30);
-                    alert("Nyawa dipulihkan (+30 HP).");
-                } else {
-                    alert("Wang tidak mencukupi ($30 diperlukan).");
-                }
+            if (type === 'bag' && player.cash >= 50) {
+                player.cash -= 50;
+                player.maxBag += 1;
+            } else if (type === 'heal' && player.cash >= 30) {
+                player.cash -= 30;
+                player.hp = Math.min(100, player.hp + 30);
             }
-            render();
+            document.getElementById('total-cash').innerText = `$${player.cash}`;
+            updateUI();
         }
 
-        initBoard();
+        function startNextRun() {
+            document.getElementById('shop-screen').style.display = 'none';
+            isShopOpen = false;
+
+            // Reset Posisi Watak & Barang
+            player.x = 0;
+            player.z = 0;
+            mapObjects.forEach(obj => {
+                if (obj.type === 'LOOT') {
+                    obj.collected = false;
+                    obj.mesh.position.y = 0.6;
+                }
+                if (obj.type === 'DOOR') {
+                    obj.locked = true;
+                    obj.mesh.position.y = 1.5;
+                }
+            });
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('hp-val').innerText = `${player.hp} HP`;
+            document.getElementById('bag-val').innerText = `${player.bagCount} / ${player.maxBag}`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePlayerLogic();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init3DEngine();
     </script>
 </body>
 </html>
