@@ -3,43 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: Fixed Lobby & Abandoned House</title>
+    <title>HAUL & RUN 3D: Fixed Working Edition</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
         
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(0, 243, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 15; box-shadow: 0 0 8px #00f3ff; display: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #00f3ff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 15; display: none; }
 
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; display: none; }
-        .interactive { pointer-events: auto; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 10; display: none; }
+        .hud-card { background: rgba(10, 12, 18, 0.85); border: 1px solid #00f3ff; padding: 10px 15px; border-radius: 8px; }
+        .hud-title { font-size: 10px; color: #88a; text-transform: uppercase; }
+        .hud-val { font-size: 20px; font-weight: bold; color: #00f3ff; }
 
-        #hud { display: flex; justify-content: space-between; width: 100%; }
-        .hud-card { background: rgba(10, 12, 18, 0.85); border: 1px solid rgba(0, 243, 255, 0.4); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(8px); }
-        .hud-title { font-size: 11px; color: #88a; text-transform: uppercase; }
-        .hud-val { font-size: 24px; font-weight: bold; color: #00f3ff; }
+        #loc-banner { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: #000; border: 1px solid #00f3ff; color: #00f3ff; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
 
-        #loc-banner { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); border: 1px solid #00f3ff; color: #00f3ff; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 2px; }
+        /* Kawalan On-Screen (Boleh Klik Guna Mouse / Skrin Sentuh) */
+        #dpad { position: absolute; bottom: 20px; left: 20px; display: grid; grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); gap: 5px; z-index: 25; pointer-events: auto; }
+        .dbtn { background: rgba(0,243,255,0.3); border: 1px solid #00f3ff; color: #fff; font-weight: bold; font-size: 16px; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .dbtn:active { background: #00f3ff; color: #000; }
 
-        /* On-Screen Mobile/Touch Controls */
-        #dpad { position: absolute; bottom: 30px; right: 30px; display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; z-index: 25; pointer-events: auto; }
-        .dbtn { background: rgba(0,243,255,0.2); border: 1px solid #00f3ff; color: #fff; font-weight: bold; font-size: 18px; border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-        .dbtn:active { background: rgba(0,243,255,0.6); }
+        /* Muka Depan / Main Menu */
+        #main-menu { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #0a0c14; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
+        .menu-title { font-size: 36px; font-weight: bold; color: #00f3ff; margin-bottom: 5px; }
+        .menu-subtitle { font-size: 12px; color: #ff0055; margin-bottom: 25px; letter-spacing: 2px; }
+        .menu-card { background: #121624; border: 1px solid #00f3ff; padding: 20px; border-radius: 10px; width: 320px; text-align: center; }
+        .mode-btn { background: #00f3ff; border: none; color: #000; padding: 12px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; text-transform: uppercase; }
 
-        #click-prompt { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 45; cursor: pointer; }
-        #click-prompt h2 { color: #00f3ff; font-size: 26px; margin-bottom: 10px; }
+        /* Modals */
+        .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0d101a; border: 2px solid #00f3ff; padding: 25px; border-radius: 10px; text-align: center; width: 340px; z-index: 40; display: none; }
+        .btn { background: #00f3ff; border: none; color: #000; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
 
-        #main-menu { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, #101424 0%, #050608 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
-        .menu-title { font-size: 48px; font-weight: 900; color: #00f3ff; letter-spacing: 4px; margin-bottom: 5px; }
-        .menu-subtitle { font-size: 14px; color: #ff0055; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 30px; }
-        .menu-card { background: rgba(18, 22, 35, 0.9); border: 1px solid rgba(0, 243, 255, 0.3); padding: 25px; border-radius: 12px; width: 360px; text-align: center; }
-        .mode-btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; text-transform: uppercase; }
-
-        .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 12, 20, 0.95); border: 2px solid #00f3ff; padding: 30px; border-radius: 12px; text-align: center; width: 400px; z-index: 40; display: none; }
-        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 12px 18px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; }
-
-        .math-problem { font-size: 26px; font-weight: bold; margin: 15px 0; color: #ffcc00; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; }
-        input[type="number"], input[type="text"] { width: 100%; padding: 12px; font-size: 16px; text-align: center; border-radius: 6px; border: 1px solid #00f3ff; background: #08090e; color: #fff; margin-bottom: 12px; outline: none; }
+        .math-problem { font-size: 24px; font-weight: bold; margin: 15px 0; color: #ffcc00; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; }
+        input[type="number"], input[type="text"] { width: 100%; padding: 10px; font-size: 16px; text-align: center; border-radius: 5px; border: 1px solid #00f3ff; background: #000; color: #fff; margin-bottom: 10px; outline: none; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -48,16 +44,11 @@
     <div id="canvas-container"></div>
     <div id="crosshair"></div>
 
-    <div id="click-prompt" onclick="lockMouse()">
-        <h2>KLIK DI SINI UNTUK KUNCI TETIKUS & GERAK</h2>
-        <p style="color: #aaa;">Gunakan WASD atau Butang Anak Panah di skrin</p>
-    </div>
-
     <div id="main-menu">
         <div class="menu-title">HAUL & RUN</div>
         <div class="menu-subtitle">ABANDONED HOUSE EXTRACTION</div>
         <div class="menu-card">
-            <input type="text" id="player-name-input" placeholder="Nama Pemain..." value="Agent_01">
+            <input type="text" id="player-name-input" placeholder="Nama..." value="Agent_01">
             <button class="mode-btn" onclick="startLobby()">MASUK KE LOBBY 3D</button>
         </div>
     </div>
@@ -65,14 +56,10 @@
     <div id="ui-layer">
         <div id="loc-banner">3D LOBBY: BERJALAN KE PAD TELEPORT</div>
 
-        <div id="hud">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
             <div class="hud-card">
                 <div class="hud-title">HP</div>
                 <div class="hud-val" id="hp-val" style="color: #ff0055;">100</div>
-            </div>
-            <div class="hud-card" style="text-align: center;">
-                <div class="hud-title">ALATAN</div>
-                <div class="hud-val" id="wheelbarrow-status" style="color: #ffcc00; font-size: 14px;">Tiada Wheelbarrow</div>
             </div>
             <div class="hud-card" style="text-align: right;">
                 <div class="hud-title">BEG</div>
@@ -80,7 +67,7 @@
             </div>
         </div>
 
-        <!-- On Screen D-Pad Touch Controls -->
+        <!-- Butang Kawalan Manuel (Boleh tekan guna Mouse/Skrin jika Keyboard terkunci) -->
         <div id="dpad">
             <div></div><div class="dbtn" onmousedown="keys.w=true" onmouseup="keys.w=false" ontouchstart="keys.w=true" ontouchend="keys.w=false">▲</div><div></div>
             <div class="dbtn" onmousedown="keys.a=true" onmouseup="keys.a=false" ontouchstart="keys.a=true" ontouchend="keys.a=false">◄</div>
@@ -89,28 +76,28 @@
         </div>
     </div>
 
-    <div class="overlay-screen interactive" id="math-modal">
-        <h1 id="math-title" style="font-size: 20px; color: #00f3ff;">SOALAN MATEMATIK</h1>
+    <div class="overlay-screen" id="math-modal">
+        <h3 style="color: #00f3ff;">PENGESAHAN MATEMATIK</h3>
         <div class="math-problem" id="math-question">12 + 15 = ?</div>
         <input type="number" id="math-answer" placeholder="Jawapan...">
         <button class="btn" onclick="submitMathAnswer()">HANTAR JAWAPAN</button>
     </div>
 
-    <div class="overlay-screen interactive" id="shop-screen">
-        <h1 style="color: #00f3ff;">FASA KEDAI</h1>
-        <p style="font-size: 14px; color: #aaa; margin: 15px 0;">
-            Hasil jualan: <b id="earned-cash" style="color:#00ff66;">+$0</b> | Tunai: <b id="total-cash" style="color:#00f3ff;">$0</b>
+    <div class="overlay-screen" id="shop-screen">
+        <h3 style="color: #00f3ff;">FASA KEDAI</h3>
+        <p style="font-size: 13px; color: #aaa; margin: 15px 0;">
+            Hasil Jualan: <b id="earned-cash" style="color:#00ff66;">+$0</b> | Tunai: <b id="total-cash" style="color:#00f3ff;">$0</b>
         </p>
-        <button class="btn" style="background: linear-gradient(135deg, #00ff66, #009933); color:#000;" onclick="startNextRun()">PULANG KE LOBBY</button>
+        <button class="btn" style="background: #00ff66;" onclick="startNextRun()">PULANG KE LOBBY</button>
     </div>
 
     <script>
         let scene, camera, renderer;
         let isMathOpen = false, isShopOpen = false;
 
-        let player = { name: "Agent_01", x: 0, z: 0, pitch: 0, yaw: 0, hp: 100, cash: 0, bagCount: 0, maxBag: 3, hasWheelbarrow: false, currentZone: 'LOBBY' };
+        let player = { x: 0, z: 0, pitch: 0, yaw: 0, hp: 100, cash: 0, bagCount: 0, maxBag: 3, currentZone: 'LOBBY' };
         let keys = { w: false, a: false, s: false, d: false };
-        let activeMathTask = null, colliders = [], lootObjects = [], doorObjects = [], teleporters = [], wheelbarrowMesh = null, extractionZone = null;
+        let activeMathTask = null, colliders = [], lootObjects = [], doorObjects = [], teleporters = [], extractionZone = null;
 
         const GRID_SIZE = 8, TILE_SIZE = 4;
         const abandonedHouseMap = [
@@ -131,13 +118,6 @@
 
             init3D();
             build3DLobby();
-            lockMouse();
-        }
-
-        function lockMouse() {
-            if (!isMathOpen && !isShopOpen) {
-                document.body.requestPointerLock();
-            }
         }
 
         function init3D() {
@@ -148,34 +128,39 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            document.addEventListener('pointerlockchange', () => {
-                const prompt = document.getElementById('click-prompt');
-                if (document.pointerLockElement === document.body) {
-                    prompt.style.display = 'none';
-                } else if (!isMathOpen && !isShopOpen) {
-                    prompt.style.display = 'flex';
+            // Kawalan Tetikus FPS
+            document.addEventListener('click', (e) => {
+                if (!isMathOpen && !isShopOpen && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                    document.body.requestPointerLock();
                 }
             });
 
             document.addEventListener('mousemove', (e) => {
-                if (document.pointerLockElement !== document.body || isMathOpen || isShopOpen) return;
-                player.yaw -= e.movementX * 0.0025;
-                player.pitch -= e.movementY * 0.0025;
-                player.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.pitch));
+                if (document.pointerLockElement === document.body && !isMathOpen && !isShopOpen) {
+                    player.yaw -= e.movementX * 0.003;
+                    player.pitch -= e.movementY * 0.003;
+                    player.pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.pitch));
+                }
             });
 
-            window.addEventListener('keydown', e => handleKey(e, true));
-            window.addEventListener('keyup', e => handleKey(e, false));
+            // Pengesan Papan Kekunci Terus (W, A, S, D & Anak Panah)
+            window.addEventListener('keydown', (e) => {
+                const k = e.key.toLowerCase();
+                if (k === 'w' || e.key === 'ArrowUp') keys.w = true;
+                if (k === 's' || e.key === 'ArrowDown') keys.s = true;
+                if (k === 'a' || e.key === 'ArrowLeft') keys.a = true;
+                if (k === 'd' || e.key === 'ArrowRight') keys.d = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const k = e.key.toLowerCase();
+                if (k === 'w' || e.key === 'ArrowUp') keys.w = false;
+                if (k === 's' || e.key === 'ArrowDown') keys.s = false;
+                if (k === 'a' || e.key === 'ArrowLeft') keys.a = false;
+                if (k === 'd' || e.key === 'ArrowRight') keys.d = false;
+            });
 
             animate();
-        }
-
-        function handleKey(e, isDown) {
-            const k = e.key.toLowerCase();
-            if (k === 'w' || e.key === 'ArrowUp') keys.w = isDown;
-            if (k === 's' || e.key === 'ArrowDown') keys.s = isDown;
-            if (k === 'a' || e.key === 'ArrowLeft') keys.a = isDown;
-            if (k === 'd' || e.key === 'ArrowRight') keys.d = isDown;
         }
 
         function build3DLobby() {
@@ -188,11 +173,6 @@
             floor.rotation.x = -Math.PI / 2;
             scene.add(floor);
 
-            const b = new THREE.Mesh(new THREE.BoxGeometry(30, 6, 30), new THREE.MeshStandardMaterial({ color: 0x00f3ff, wireframe: true }));
-            b.position.y = 3;
-            scene.add(b);
-            colliders.push(new THREE.Box3().setFromObject(b));
-
             const pad1 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 16), new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
             pad1.position.set(-5, 0.1, -5);
             scene.add(pad1);
@@ -201,10 +181,7 @@
             pad2.position.set(5, 0.1, -5);
             scene.add(pad2);
 
-            teleporters = [
-                { x: -5, z: -5, mode: 'HOUSE' },
-                { x: 5, z: -5, mode: 'HOUSE' }
-            ];
+            teleporters = [{ x: -5, z: -5 }, { x: 5, z: -5 }];
         }
 
         function buildAbandonedHouseMap() {
@@ -212,7 +189,6 @@
             player.currentZone = 'MAP';
             player.x = 2; player.z = 2;
             document.getElementById('loc-banner').innerText = "RUMAH TERBIAR (ABANDONED HOUSE)";
-            document.getElementById('loc-banner').style.color = "#ff0055";
 
             const mapWidth = GRID_SIZE * TILE_SIZE;
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), new THREE.MeshStandardMaterial({ color: 0x221c16 }));
@@ -227,10 +203,10 @@
                     const posZ = r * TILE_SIZE + TILE_SIZE/2;
 
                     if (type === 'X') {
-                        const wall = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE, 4.5, TILE_SIZE), new THREE.MeshStandardMaterial({ color: 0x1a1410 }));
-                        wall.position.set(posX, 2.25, posZ);
+                        const wall = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE, 4, TILE_SIZE), new THREE.MeshStandardMaterial({ color: 0x1a1410 }));
+                        wall.position.set(posX, 2, posZ);
                         scene.add(wall);
-                        colliders.push(new THREE.Box3().setFromObject(wall));
+                        colliders.push({ x: posX, z: posZ });
                     } else if (type === 'D') {
                         const door = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE, 4, 0.3), new THREE.MeshStandardMaterial({ color: 0x5c3a21 }));
                         door.position.set(posX, 2, posZ);
@@ -255,9 +231,9 @@
             colliders = []; lootObjects = []; doorObjects = []; teleporters = [];
             if (scene) {
                 while(scene.children.length > 0){ scene.remove(scene.children[0]); }
-                const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+                const ambient = new THREE.AmbientLight(0xffffff, 0.4);
                 scene.add(ambient);
-                const light = new THREE.PointLight(0x00f3ff, 1.2, 12);
+                const light = new THREE.PointLight(0x00f3ff, 1.5, 15);
                 camera.add(light);
                 scene.add(camera);
             }
@@ -266,7 +242,7 @@
         function updateMovement() {
             if (isMathOpen || isShopOpen) return;
 
-            let moveSpeed = 0.12;
+            let moveSpeed = 0.14;
             let dx = 0, dz = 0;
 
             if (keys.w) { dx -= Math.sin(player.yaw) * moveSpeed; dz -= Math.cos(player.yaw) * moveSpeed; }
@@ -274,24 +250,29 @@
             if (keys.a) { dx -= Math.cos(player.yaw) * moveSpeed; dz += Math.sin(player.yaw) * moveSpeed; }
             if (keys.d) { dx += Math.cos(player.yaw) * moveSpeed; dz -= Math.sin(player.yaw) * moveSpeed; }
 
+            // Pergerakan Pantas Tanpa Lag
             let nextX = player.x + dx;
             let nextZ = player.z + dz;
 
-            let pBox = new THREE.Box3(new THREE.Vector3(nextX - 0.4, 0.1, player.z - 0.4), new THREE.Vector3(nextX + 0.4, 1.8, player.z + 0.4));
-            let collideX = false;
-            for (let b of colliders) { if (pBox.intersectsBox(b)) { collideX = true; break; } }
-            if (!collideX) player.x = nextX;
+            let canMove = true;
+            for (let c of colliders) {
+                if (Math.hypot(nextX - c.x, nextZ - c.z) < 2.0) {
+                    canMove = false;
+                    break;
+                }
+            }
 
-            pBox.set(new THREE.Vector3(player.x - 0.4, 0.1, nextZ - 0.4), new THREE.Vector3(player.x + 0.4, 1.8, nextZ + 0.4));
-            let collideZ = false;
-            for (let b of colliders) { if (pBox.intersectsBox(b)) { collideZ = true; break; } }
-            if (!collideZ) player.z = nextZ;
+            if (canMove) {
+                player.x = nextX;
+                player.z = nextZ;
+            }
 
             camera.position.set(player.x, 1.6, player.z);
             camera.rotation.set(0, 0, 0);
             camera.rotation.y = player.yaw;
             camera.rotation.x = player.pitch;
 
+            // Semak Teleport di Lobby
             if (player.currentZone === 'LOBBY') {
                 teleporters.forEach(tp => {
                     if (Math.hypot(player.x - tp.x, player.z - tp.z) < 1.5) {
@@ -300,6 +281,7 @@
                 });
             }
 
+            // Semak Interaksi dalam Rumah Terbiar
             if (player.currentZone === 'MAP') {
                 doorObjects.forEach(door => {
                     if (door.locked && Math.hypot(player.x - door.x, player.z - door.z) < 1.8) {
@@ -348,7 +330,6 @@
             isMathOpen = false;
 
             if (activeMathTask) activeMathTask.callback(userAns === activeMathTask.ans);
-            lockMouse();
         }
 
         function openShop() {
@@ -369,7 +350,6 @@
             isShopOpen = false;
             build3DLobby();
             updateUI();
-            lockMouse();
         }
 
         function updateUI() {
