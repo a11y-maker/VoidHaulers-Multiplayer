@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: Online Extraction</title>
+    <title>HAUL & RUN 3D: Abandoned House & Teleport Lobby</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
@@ -22,14 +22,16 @@
         .hud-title { font-size: 11px; color: #88a; text-transform: uppercase; letter-spacing: 1px; }
         .hud-val { font-size: 24px; font-weight: bold; color: #00f3ff; }
 
+        /* Location Banner */
+        #loc-banner { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); border: 1px solid #ffcc00; color: #ffcc00; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 2px; }
+
         /* Chat Window Overlay */
-        #chat-window { position: absolute; bottom: 20px; left: 20px; width: 320px; height: 200px; background: rgba(10, 12, 20, 0.85); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 8px; display: flex; flex-direction: column; pointer-events: auto; backdrop-filter: blur(5px); z-index: 20; }
+        #chat-window { position: absolute; bottom: 20px; left: 20px; width: 320px; height: 180px; background: rgba(10, 12, 20, 0.85); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 8px; display: flex; flex-direction: column; pointer-events: auto; backdrop-filter: blur(5px); z-index: 20; }
         #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; color: #ccc; display: flex; flex-direction: column; gap: 6px; }
         .chat-msg { background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; word-break: break-word; }
         .chat-msg .sender { font-weight: bold; color: #00f3ff; }
         #chat-input-container { display: flex; border-top: 1px solid rgba(0, 243, 255, 0.2); }
         #chat-input { flex: 1; background: transparent; border: none; padding: 8px 10px; color: #fff; font-size: 12px; outline: none; }
-        #chat-send-btn { background: #00f3ff; border: none; color: #000; font-weight: bold; padding: 0 12px; cursor: pointer; font-size: 11px; }
 
         /* Main Menu / Muka Depan */
         #main-menu { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, #101424 0%, #050608 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
@@ -39,11 +41,9 @@
         .menu-card { background: rgba(18, 22, 35, 0.9); border: 1px solid rgba(0, 243, 255, 0.3); padding: 25px; border-radius: 12px; width: 360px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
         .mode-btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
         .mode-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(0, 243, 255, 0.5); }
-        .mode-btn.online { background: linear-gradient(135deg, #ff0055, #ff5500); }
 
-        /* Screens & Modals */
+        /* Overlay Screens */
         .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 12, 20, 0.95); border: 2px solid #00f3ff; box-shadow: 0 0 30px rgba(0, 243, 255, 0.3); padding: 30px; border-radius: 12px; text-align: center; width: 400px; backdrop-filter: blur(10px); z-index: 40; display: none; }
-        
         .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 12px 18px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-green { background: linear-gradient(135deg, #00ff66, #009933); color: #000; }
 
@@ -61,33 +61,26 @@
     <!-- MUKA DEPAN / MAIN MENU -->
     <div id="main-menu">
         <div class="menu-title">HAUL & RUN</div>
-        <div class="menu-subtitle">3D Mathematical Extraction</div>
+        <div class="menu-subtitle">ABANDONED HOUSE EXTRACTION</div>
 
         <div class="menu-card">
-            <input type="text" id="player-name-input" placeholder="Masukkan Nama Pemain..." value="Agent_01">
-            <button class="mode-btn" onclick="selectGameMode('solo')">🎮 Solo Player Mode</button>
-            <button class="mode-btn online" onclick="showLobbyMenu()">🌐 Online Multiplayer Mode</button>
+            <input type="text" id="player-name-input" placeholder="Masukkan Nama..." value="Agent_01">
+            <button class="mode-btn" onclick="enterLobby()">MASUK KE LOBBY 3D</button>
         </div>
-    </div>
-
-    <!-- MULTIPLAYER LOBBY SCREEN -->
-    <div class="overlay-screen interactive" id="lobby-menu">
-        <h2 style="color: #00f3ff; margin-bottom: 15px;">LOBBY MULTIPLAYER</h2>
-        <input type="text" id="room-code-input" placeholder="Masukkan Kod Bilik (cth: REPO123)..." value="ROOM_88">
-        <button class="btn" onclick="joinOnlineRoom()">MASUK / BINA BILIK</button>
-        <button class="btn" style="background: #444; margin-top: 8px;" onclick="hideLobbyMenu()">KEMBALI</button>
     </div>
 
     <!-- IN-GAME HUD -->
     <div id="ui-layer">
+        <div id="loc-banner">3D LOBBY: BERJALAN KE PAD TELEPORT</div>
+
         <div id="hud">
             <div class="hud-card">
-                <div class="hud-title">Status Kesihatan</div>
+                <div class="hud-title">Kesihatan</div>
                 <div class="hud-val" id="hp-val" style="color: #ff0055;">100 HP</div>
             </div>
             <div class="hud-card" style="text-align: center;">
-                <div class="hud-title">Mod / Peralatan</div>
-                <div class="hud-val" id="wheelbarrow-status" style="color: #ffcc00; font-size: 15px; margin-top: 5px;">Tiada Wheelbarrow</div>
+                <div class="hud-title">Peralatan</div>
+                <div class="hud-val" id="wheelbarrow-status" style="color: #ffcc00; font-size: 14px; margin-top: 5px;">Tiada Wheelbarrow</div>
             </div>
             <div class="hud-card" style="text-align: right;">
                 <div class="hud-title">Barang Diangkut</div>
@@ -98,11 +91,10 @@
         <!-- TETINGKAP SEMBANG (TEXT CHAT) -->
         <div id="chat-window">
             <div id="chat-messages">
-                <div class="chat-msg"><span class="sender">SYSTEM:</span> Selamat datang ke permainan! Gunakan ruang ini untuk bersembang.</div>
+                <div class="chat-msg"><span class="sender">SYSTEM:</span> Selamat datang! Berjalan ke Pad Teleport untuk mula.</div>
             </div>
             <div id="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Taip mesej di sini... (Tekan Enter)">
-                <button id="chat-send-btn" onclick="sendChatMessage()">HANTAR</button>
+                <input type="text" id="chat-input" placeholder="Mesej... (Tekan Enter)">
             </div>
         </div>
     </div>
@@ -119,7 +111,7 @@
     <!-- Fasa Kedai Screen -->
     <div class="overlay-screen interactive" id="shop-screen" style="width: 420px;">
         <h1 style="color: #00f3ff;">FASA KEDAI & UPGRADE</h1>
-        <h3 style="color: #ff0055; font-size: 12px; margin-bottom: 15px;">Misi Berjaya Dikeluarkan</h3>
+        <h3 style="color: #ff0055; font-size: 12px; margin-bottom: 15px;">Misi Rumah Terbiar Berjaya</h3>
         <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">
             Hasil jualan pusingan ini: <b id="earned-cash" style="color:#00ff66;">+$0</b><br>
             Jumlah Wang Tunai: <b id="total-cash" style="color:#00f3ff;">$0</b>
@@ -133,7 +125,7 @@
             <button class="btn" style="width: 90px; margin: 0; padding: 8px;" onclick="buyUpgrade('heal')">$30</button>
         </div>
 
-        <button class="btn btn-green" style="margin-top: 15px;" onclick="startNextRun()">MULA PUSINGAN SETERUSNYA</button>
+        <button class="btn btn-green" style="margin-top: 15px;" onclick="startNextRun()">PULANG KE LOBBY</button>
     </div>
 
     <script>
@@ -144,25 +136,24 @@
         // Player & Game State
         let player = {
             name: "Agent_01",
-            x: 1.5, z: 1.5,
+            x: 0, z: 0,
             pitch: 0, yaw: 0,
             hp: 100, cash: 0,
             bagCount: 0, maxBag: 3,
             hasWheelbarrow: false,
-            isOnline: false,
-            roomCode: ""
+            currentZone: 'LOBBY' // LOBBY or MAP
         };
 
-        let remotePlayers = {}; // Stores online players
         let keys = { w: false, a: false, s: false, d: false };
         let activeMathTask = null;
         let colliders = [];
-        let lootObjects = [], doorObjects = [], wheelbarrowMesh = null, extractionZone = null;
+        let lootObjects = [], doorObjects = [], teleporters = [], wheelbarrowMesh = null, extractionZone = null;
 
         const GRID_SIZE = 8;
         const TILE_SIZE = 4;
 
-        const mapLayout = [
+        // Map layout Rumah Terbiar
+        const abandonedHouseMap = [
             ['P', '.', '.', 'X', '.', '.', '.', '.'],
             ['.', 'X', '.', 'D', '.', 'X', 'L', '.'],
             ['.', 'X', '.', 'X', '.', 'X', '.', '.'],
@@ -173,7 +164,7 @@
             ['L', '.', '.', '.', '.', 'L', '.', 'S']
         ];
 
-        // Sound Effects Synthesizer
+        // Sound Synth
         function playSound(type) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
@@ -182,12 +173,13 @@
             gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
 
-            if (type === 'step') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(120, now);
-                gain.gain.setValueAtTime(0.03, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-                osc.start(now); osc.stop(now + 0.1);
+            if (type === 'teleport') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.4);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
             } else if (type === 'beep') {
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(600, now);
@@ -204,15 +196,7 @@
             }
         }
 
-        // Muka Depan & Lobby Handling
-        function showLobbyMenu() {
-            document.getElementById('lobby-menu').style.display = 'block';
-        }
-        function hideLobbyMenu() {
-            document.getElementById('lobby-menu').style.display = 'none';
-        }
-
-        function selectGameMode(mode) {
+        function enterLobby() {
             const nameInput = document.getElementById('player-name-input').value.trim();
             if (nameInput) player.name = nameInput;
 
@@ -220,70 +204,14 @@
             document.getElementById('ui-layer').style.display = 'flex';
             document.getElementById('crosshair').style.display = 'block';
 
-            if (mode === 'solo') {
-                player.isOnline = false;
-                addChatMessage("SYSTEM", "Anda bermain dalam mod Solo.");
-            }
-            
             init3DGame();
+            build3DLobby();
             document.body.requestPointerLock();
-        }
-
-        function joinOnlineRoom() {
-            const code = document.getElementById('room-code-input').value.trim();
-            if (!code) return;
-
-            player.roomCode = code;
-            player.isOnline = true;
-            hideLobbyMenu();
-            selectGameMode('online');
-
-            addChatMessage("SYSTEM", `Berjaya menyambung ke Bilik Online: ${player.roomCode}`);
-            spawnSimulatedOnlinePartner();
-        }
-
-        function spawnSimulatedOnlinePartner() {
-            // Simulasi Rakan Online dalam Bilik
-            const pGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.6, 16);
-            const pMat = new THREE.MeshStandardMaterial({ color: 0xff0055 });
-            const partnerMesh = new THREE.Mesh(pGeo, pMat);
-            partnerMesh.position.set(2.5, 0.8, 1.5);
-            scene.add(partnerMesh);
-
-            remotePlayers["partner1"] = partnerMesh;
-            addChatMessage("SYSTEM", "Pemain 'Agent_Partner' telah menyertai bilik anda!");
-        }
-
-        // System Sembang Teks (Chat)
-        function sendChatMessage() {
-            const inputEl = document.getElementById('chat-input');
-            const msg = inputEl.value.trim();
-            if (msg) {
-                addChatMessage(player.name, msg);
-                inputEl.value = '';
-
-                // Autoreply simulasi jika dalam mod Online
-                if (player.isOnline) {
-                    setTimeout(() => {
-                        addChatMessage("Agent_Partner", "Jom cari barang dekat bilik sebelah!");
-                    }, 1500);
-                }
-            }
-        }
-
-        function addChatMessage(sender, text) {
-            const chatBox = document.getElementById('chat-messages');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'chat-msg';
-            msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${text}`;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         function init3DGame() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x050608, 0.03);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -291,14 +219,13 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.25);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.2);
             scene.add(ambient);
 
             const flashLight = new THREE.PointLight(0x00f3ff, 1.2, 12);
             camera.add(flashLight);
             scene.add(camera);
 
-            buildEnvironment();
             setupPointerLockAndChat();
 
             window.addEventListener('keydown', e => handleKey(e, true));
@@ -308,63 +235,122 @@
             animate();
         }
 
-        function buildEnvironment() {
+        // BINA LOBBY 3D (KAWASAN HUB)
+        function build3DLobby() {
+            clearScene();
+            player.currentZone = 'LOBBY';
+            player.x = 0; player.z = 0;
+            document.getElementById('loc-banner').innerText = "3D LOBBY: BERJALAN KE PAD TELEPORT";
+            scene.fog = new THREE.FogExp2(0x0a0c16, 0.02);
+
+            // Lantai Lobby Futuristik
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x121626, roughness: 0.3, metalness: 0.5 });
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            // Dinding Sempadan Lobby
+            const barrierMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, wireframe: true });
+            const b = new THREE.Mesh(new THREE.BoxGeometry(30, 6, 30), barrierMat);
+            b.position.y = 3;
+            scene.add(b);
+            colliders.push(new THREE.Box3().setFromObject(b));
+
+            // Teleport Pad 1: Solo Mode (Rumah Terbiar)
+            const pad1 = new THREE.Mesh(
+                new THREE.CylinderGeometry(2, 2, 0.2, 16),
+                new THREE.MeshBasicMaterial({ color: 0x00f3ff })
+            );
+            pad1.position.set(-6, 0.1, -6);
+            scene.add(pad1);
+
+            // Teleport Pad 2: Online Multiplayer Mode
+            const pad2 = new THREE.Mesh(
+                new THREE.CylinderGeometry(2, 2, 0.2, 16),
+                new THREE.MeshBasicMaterial({ color: 0xff0055 })
+            );
+            pad2.position.set(6, 0.1, -6);
+            scene.add(pad2);
+
+            teleporters = [
+                { mesh: pad1, x: -6, z: -6, mode: 'SOLO_HOUSE', label: "RUMAH TERBIAR (SOLO)" },
+                { mesh: pad2, x: 6, z: -6, mode: 'ONLINE_HOUSE', label: "RUMAH TERBIAR (ONLINE)" }
+            ];
+
+            addChatMessage("SYSTEM", "Anda kini berada di 3D Lobby. Berjalan ke pad BIRU atau MERAH untuk diteleport!");
+        }
+
+        // BINA MAP RUMAH TERBIAR (ABANDONED HOUSE)
+        function buildAbandonedHouseMap() {
+            clearScene();
+            player.currentZone = 'MAP';
+            player.x = 2; player.z = 2;
+            document.getElementById('loc-banner').innerText = "RUMAH TERBIAR (ABANDONED HOUSE)";
+            document.getElementById('loc-banner').style.borderColor = "#ff0055";
+            document.getElementById('loc-banner').style.color = "#ff0055";
+
+            // Ambient Creepy Fog
+            scene.fog = new THREE.FogExp2(0x050403, 0.08);
+
             const mapWidth = GRID_SIZE * TILE_SIZE;
-            
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.8 });
+
+            // Lantai Kayu usang / Simen Berabuk
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x221c16, roughness: 0.9 });
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.position.set(mapWidth/2, 0, mapWidth/2);
             scene.add(floor);
 
-            // Perimeter Outer Barriers
-            const barrierMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.2, metalness: 0.8 });
-            const bThickness = 1, bHeight = 5;
-
-            const bNorth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, bHeight, bThickness), barrierMat);
-            bNorth.position.set(mapWidth/2, bHeight/2, -bThickness/2);
-            const bSouth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, bHeight, bThickness), barrierMat);
-            bSouth.position.set(mapWidth/2, bHeight/2, mapWidth + bThickness/2);
-            const bWest = new THREE.Mesh(new THREE.BoxGeometry(bThickness, bHeight, mapWidth + 2), barrierMat);
-            bWest.position.set(-bThickness/2, bHeight/2, mapWidth/2);
-            const bEast = new THREE.Mesh(new THREE.BoxGeometry(bThickness, bHeight, mapWidth + 2), barrierMat);
-            bEast.position.set(mapWidth + bThickness/2, bHeight/2, mapWidth/2);
+            // Outer Perimeter Barriers
+            const barrierMat = new THREE.MeshStandardMaterial({ color: 0x3a2e2b, roughness: 0.9 });
+            const bNorth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, 5, 1), barrierMat);
+            bNorth.position.set(mapWidth/2, 2.5, -0.5);
+            const bSouth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, 5, 1), barrierMat);
+            bSouth.position.set(mapWidth/2, 2.5, mapWidth + 0.5);
+            const bWest = new THREE.Mesh(new THREE.BoxGeometry(1, 5, mapWidth + 2), barrierMat);
+            bWest.position.set(-0.5, 2.5, mapWidth/2);
+            const bEast = new THREE.Mesh(new THREE.BoxGeometry(1, 5, mapWidth + 2), barrierMat);
+            bEast.position.set(mapWidth + 0.5, 2.5, mapWidth/2);
 
             scene.add(bNorth, bSouth, bWest, bEast);
             [bNorth, bSouth, bWest, bEast].forEach(b => colliders.push(new THREE.Box3().setFromObject(b)));
 
-            // Map Interior
+            // Dinding Kayu & Bilik Rumah Terbiar
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
-                    const type = mapLayout[r][c];
+                    const type = abandonedHouseMap[r][c];
                     const posX = c * TILE_SIZE + TILE_SIZE/2;
                     const posZ = r * TILE_SIZE + TILE_SIZE/2;
 
                     if (type === 'X') {
+                        // Dinding Usang Rumah
                         const wall = new THREE.Mesh(
-                            new THREE.BoxGeometry(TILE_SIZE, 4, TILE_SIZE),
-                            new THREE.MeshStandardMaterial({ color: 0x181c28, roughness: 0.6 })
+                            new THREE.BoxGeometry(TILE_SIZE, 4.5, TILE_SIZE),
+                            new THREE.MeshStandardMaterial({ color: 0x1a1410, roughness: 0.9 })
                         );
-                        wall.position.set(posX, 2, posZ);
+                        wall.position.set(posX, 2.25, posZ);
                         scene.add(wall);
                         colliders.push(new THREE.Box3().setFromObject(wall));
                     } else if (type === 'D') {
+                        // Pintu Kayu Terkunci
                         const door = new THREE.Mesh(
-                            new THREE.BoxGeometry(TILE_SIZE, 4, 0.4),
-                            new THREE.MeshStandardMaterial({ color: 0xff9900, roughness: 0.3 })
+                            new THREE.BoxGeometry(TILE_SIZE, 4, 0.3),
+                            new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.7 })
                         );
                         door.position.set(posX, 2, posZ);
                         scene.add(door);
                         doorObjects.push({ mesh: door, x: posX, z: posZ, locked: true });
                     } else if (type === 'L') {
+                        // Peti Barangan Berharga
                         const box = new THREE.Mesh(
                             new THREE.BoxGeometry(1.2, 1.2, 1.2),
-                            new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.3 })
+                            new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.4 })
                         );
                         box.position.set(posX, 0.6, posZ);
                         scene.add(box);
                         lootObjects.push({ mesh: box, x: posX, z: posZ, collected: false });
                     } else if (type === 'S') {
+                        // Extraction Pad
                         const pad = new THREE.Mesh(
                             new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16),
                             new THREE.MeshBasicMaterial({ color: 0x00ff66 })
@@ -376,8 +362,15 @@
                 }
             }
 
-            // Wheelbarrow
-            createWheelbarrow(2.5, 2.5);
+            // Lampu Malap Rumah Terbiar
+            const dimLight1 = new THREE.PointLight(0xffaa55, 0.8, 15);
+            dimLight1.position.set(8, 3.5, 8);
+            const dimLight2 = new THREE.PointLight(0xffaa55, 0.8, 15);
+            dimLight2.position.set(24, 3.5, 24);
+            scene.add(dimLight1, dimLight2);
+
+            // Wheelbarrow at Start
+            createWheelbarrow(3.5, 3.5);
         }
 
         function createWheelbarrow(x, z) {
@@ -391,6 +384,23 @@
             group.position.set(x, 0, z);
             scene.add(group);
             wheelbarrowMesh = { group: group, x: x, z: z, picked: false };
+        }
+
+        function clearScene() {
+            colliders = [];
+            lootObjects = [];
+            doorObjects = [];
+            teleporters = [];
+            if (scene) {
+                while(scene.children.length > 0){ 
+                    scene.remove(scene.children[0]); 
+                }
+                const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+                scene.add(ambient);
+                const flashLight = new THREE.PointLight(0x00f3ff, 1.2, 12);
+                camera.add(flashLight);
+                scene.add(camera);
+            }
         }
 
         function setupPointerLockAndChat() {
@@ -418,6 +428,24 @@
             if (k === 'KeyD') keys.d = isDown;
         }
 
+        function sendChatMessage() {
+            const inputEl = document.getElementById('chat-input');
+            const msg = inputEl.value.trim();
+            if (msg) {
+                addChatMessage(player.name, msg);
+                inputEl.value = '';
+            }
+        }
+
+        function addChatMessage(sender, text) {
+            const chatBox = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-msg';
+            msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${text}`;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
         function updatePlayerMovement() {
             if (isMathOpen || isShopOpen || isChatFocus || document.pointerLockElement !== document.body) return;
 
@@ -432,7 +460,7 @@
             let nextX = player.x + dx;
             let nextZ = player.z + dz;
 
-            // Collision Check
+            // Collision Detection
             let playerBox = new THREE.Box3(
                 new THREE.Vector3(nextX - 0.4, 0.1, player.z - 0.4),
                 new THREE.Vector3(nextX + 0.4, 1.8, player.z + 0.4)
@@ -454,40 +482,57 @@
             camera.rotation.y = player.yaw;
             camera.rotation.x = player.pitch;
 
-            // Wheelbarrow Pick
-            if (wheelbarrowMesh && !wheelbarrowMesh.picked) {
-                if (Math.hypot(player.x - wheelbarrowMesh.x, player.z - wheelbarrowMesh.z) < 1.5) {
-                    wheelbarrowMesh.picked = true;
-                    player.hasWheelbarrow = true;
-                    wheelbarrowMesh.group.position.y = -10;
-                    document.getElementById('wheelbarrow-status').innerText = "🛒 Wheelbarrow (Kapasiti ∞)";
-                    document.getElementById('wheelbarrow-status').style.color = "#00ff66";
-                    playSound('beep');
-                    updateUI();
-                }
+            // TELEPORTATION CHECK (LOBBY ZONE)
+            if (player.currentZone === 'LOBBY') {
+                teleporters.forEach(tp => {
+                    let dist = Math.hypot(player.x - tp.x, player.z - tp.z);
+                    if (dist < 1.5) {
+                        playSound('teleport');
+                        addChatMessage("SYSTEM", `Diteleport ke ${tp.label}!`);
+                        buildAbandonedHouseMap();
+                    }
+                });
             }
 
-            // Interactions
-            doorObjects.forEach(door => {
-                if (door.locked && Math.hypot(player.x - door.x, player.z - door.z) < 1.8) {
-                    triggerMathQuestion('DOOR', (correct) => {
-                        if (correct) { door.locked = false; door.mesh.position.y = -10; playSound('beep'); }
-                        else { player.hp -= 10; updateUI(); }
-                    });
+            // MAP INTERACTION (ABANDONED HOUSE)
+            if (player.currentZone === 'MAP') {
+                // Wheelbarrow Pick
+                if (wheelbarrowMesh && !wheelbarrowMesh.picked) {
+                    if (Math.hypot(player.x - wheelbarrowMesh.x, player.z - wheelbarrowMesh.z) < 1.5) {
+                        wheelbarrowMesh.picked = true;
+                        player.hasWheelbarrow = true;
+                        wheelbarrowMesh.group.position.y = -10;
+                        document.getElementById('wheelbarrow-status').innerText = "🛒 Wheelbarrow (Kapasiti ∞)";
+                        document.getElementById('wheelbarrow-status').style.color = "#00ff66";
+                        playSound('beep');
+                        updateUI();
+                    }
                 }
-            });
 
-            lootObjects.forEach(loot => {
-                if (!loot.collected && Math.hypot(player.x - loot.x, player.z - loot.z) < 1.5) {
-                    if (!player.hasWheelbarrow && player.bagCount >= player.maxBag) return;
-                    triggerMathQuestion('LOOT', (correct) => {
-                        if (correct) { loot.collected = true; loot.mesh.position.y = -10; player.bagCount++; playSound('beep'); updateUI(); }
-                    });
+                // Doors
+                doorObjects.forEach(door => {
+                    if (door.locked && Math.hypot(player.x - door.x, player.z - door.z) < 1.8) {
+                        triggerMathQuestion('DOOR', (correct) => {
+                            if (correct) { door.locked = false; door.mesh.position.y = -10; playSound('beep'); }
+                            else { player.hp -= 10; updateUI(); }
+                        });
+                    }
+                });
+
+                // Loot
+                lootObjects.forEach(loot => {
+                    if (!loot.collected && Math.hypot(player.x - loot.x, player.z - loot.z) < 1.5) {
+                        if (!player.hasWheelbarrow && player.bagCount >= player.maxBag) return;
+                        triggerMathQuestion('LOOT', (correct) => {
+                            if (correct) { loot.collected = true; loot.mesh.position.y = -10; player.bagCount++; playSound('beep'); updateUI(); }
+                        });
+                    }
+                });
+
+                // Extraction
+                if (extractionZone && Math.hypot(player.x - extractionZone.x, player.z - extractionZone.z) < 1.5) {
+                    openShopPhase();
                 }
-            });
-
-            if (extractionZone && Math.hypot(player.x - extractionZone.x, player.z - extractionZone.z) < 1.5) {
-                openShopPhase();
             }
         }
 
@@ -522,7 +567,7 @@
             isShopOpen = true;
             document.exitPointerLock();
 
-            let earned = player.bagCount * 35;
+            let earned = player.bagCount * 40;
             player.cash += earned;
             player.bagCount = 0;
 
@@ -547,10 +592,8 @@
             document.getElementById('shop-screen').style.display = 'none';
             isShopOpen = false;
 
-            player.x = 1.5; player.z = 1.5;
-            lootObjects.forEach(l => { l.collected = false; l.mesh.position.y = 0.6; });
-            doorObjects.forEach(d => { d.locked = true; d.mesh.position.y = 2; });
-
+            // Pulang ke Lobby
+            build3DLobby();
             updateUI();
             document.body.requestPointerLock();
         }
