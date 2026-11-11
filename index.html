@@ -3,51 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: Abandoned House & Teleport Lobby</title>
+    <title>HAUL & RUN 3D: Fixed Movement Lobby</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
         
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-        
-        /* Reticle / Crosshair First Person */
         #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: rgba(0, 243, 255, 0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 15; box-shadow: 0 0 8px #00f3ff; display: none; }
 
-        /* UI HUD Overlay */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; display: none; }
         .interactive { pointer-events: auto; }
 
         #hud { display: flex; justify-content: space-between; width: 100%; }
-        .hud-card { background: rgba(10, 12, 18, 0.85); border: 1px solid rgba(0, 243, 255, 0.4); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(8px); box-shadow: 0 0 15px rgba(0,0,0,0.8); }
-        .hud-title { font-size: 11px; color: #88a; text-transform: uppercase; letter-spacing: 1px; }
+        .hud-card { background: rgba(10, 12, 18, 0.85); border: 1px solid rgba(0, 243, 255, 0.4); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(8px); }
+        .hud-title { font-size: 11px; color: #88a; text-transform: uppercase; }
         .hud-val { font-size: 24px; font-weight: bold; color: #00f3ff; }
 
-        /* Location Banner */
-        #loc-banner { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); border: 1px solid #ffcc00; color: #ffcc00; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 2px; }
+        #loc-banner { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); border: 1px solid #00f3ff; color: #00f3ff; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; letter-spacing: 2px; }
 
-        /* Chat Window Overlay */
-        #chat-window { position: absolute; bottom: 20px; left: 20px; width: 320px; height: 180px; background: rgba(10, 12, 20, 0.85); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 8px; display: flex; flex-direction: column; pointer-events: auto; backdrop-filter: blur(5px); z-index: 20; }
-        #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; color: #ccc; display: flex; flex-direction: column; gap: 6px; }
-        .chat-msg { background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; word-break: break-word; }
+        #click-to-move-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 45; cursor: pointer; }
+        #click-to-move-overlay h2 { color: #00f3ff; font-size: 28px; letter-spacing: 2px; margin-bottom: 10px; }
+
+        #chat-window { position: absolute; bottom: 20px; left: 20px; width: 300px; height: 160px; background: rgba(10, 12, 20, 0.85); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 8px; display: flex; flex-direction: column; pointer-events: auto; backdrop-filter: blur(5px); z-index: 20; }
+        #chat-messages { flex: 1; padding: 8px; overflow-y: auto; font-size: 12px; color: #ccc; display: flex; flex-direction: column; gap: 4px; }
+        .chat-msg { background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 4px; }
         .chat-msg .sender { font-weight: bold; color: #00f3ff; }
-        #chat-input-container { display: flex; border-top: 1px solid rgba(0, 243, 255, 0.2); }
-        #chat-input { flex: 1; background: transparent; border: none; padding: 8px 10px; color: #fff; font-size: 12px; outline: none; }
+        #chat-input { background: transparent; border: none; border-top: 1px solid rgba(0, 243, 255, 0.2); padding: 8px; color: #fff; font-size: 12px; outline: none; }
 
-        /* Main Menu / Muka Depan */
         #main-menu { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, #101424 0%, #050608 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
         .menu-title { font-size: 48px; font-weight: 900; color: #00f3ff; text-shadow: 0 0 20px rgba(0, 243, 255, 0.6); letter-spacing: 4px; margin-bottom: 5px; }
         .menu-subtitle { font-size: 14px; color: #ff0055; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 30px; }
         
-        .menu-card { background: rgba(18, 22, 35, 0.9); border: 1px solid rgba(0, 243, 255, 0.3); padding: 25px; border-radius: 12px; width: 360px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        .mode-btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s; }
-        .mode-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(0, 243, 255, 0.5); }
+        .menu-card { background: rgba(18, 22, 35, 0.9); border: 1px solid rgba(0, 243, 255, 0.3); padding: 25px; border-radius: 12px; width: 360px; text-align: center; }
+        .mode-btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Overlay Screens */
-        .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 12, 20, 0.95); border: 2px solid #00f3ff; box-shadow: 0 0 30px rgba(0, 243, 255, 0.3); padding: 30px; border-radius: 12px; text-align: center; width: 400px; backdrop-filter: blur(10px); z-index: 40; display: none; }
-        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 12px 18px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .overlay-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 12, 20, 0.95); border: 2px solid #00f3ff; padding: 30px; border-radius: 12px; text-align: center; width: 400px; z-index: 40; display: none; }
+        .btn { background: linear-gradient(135deg, #00f3ff, #0066ff); border: none; color: #fff; padding: 12px 18px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; text-transform: uppercase; }
         .btn-green { background: linear-gradient(135deg, #00ff66, #009933); color: #000; }
 
-        /* Math Modal */
         .math-problem { font-size: 26px; font-weight: bold; margin: 15px 0; color: #ffcc00; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px; border: 1px dashed rgba(255,204,0,0.4); }
         input[type="number"], input[type="text"] { width: 100%; padding: 12px; font-size: 16px; text-align: center; border-radius: 6px; border: 1px solid #00f3ff; background: #08090e; color: #fff; margin-bottom: 12px; outline: none; }
     </style>
@@ -58,18 +51,20 @@
     <div id="canvas-container"></div>
     <div id="crosshair"></div>
 
-    <!-- MUKA DEPAN / MAIN MENU -->
+    <div id="click-to-move-overlay" onclick="lockPointer()">
+        <h2>KLIK PADA SKRIN UNTUK BERGERAK</h2>
+        <p style="color: #aaa;">Gunakan [W, A, S, D] untuk berjalan di Lobby</p>
+    </div>
+
     <div id="main-menu">
         <div class="menu-title">HAUL & RUN</div>
         <div class="menu-subtitle">ABANDONED HOUSE EXTRACTION</div>
-
         <div class="menu-card">
             <input type="text" id="player-name-input" placeholder="Masukkan Nama..." value="Agent_01">
             <button class="mode-btn" onclick="enterLobby()">MASUK KE LOBBY 3D</button>
         </div>
     </div>
 
-    <!-- IN-GAME HUD -->
     <div id="ui-layer">
         <div id="loc-banner">3D LOBBY: BERJALAN KE PAD TELEPORT</div>
 
@@ -88,18 +83,14 @@
             </div>
         </div>
 
-        <!-- TETINGKAP SEMBANG (TEXT CHAT) -->
         <div id="chat-window">
             <div id="chat-messages">
-                <div class="chat-msg"><span class="sender">SYSTEM:</span> Selamat datang! Berjalan ke Pad Teleport untuk mula.</div>
+                <div class="chat-msg"><span class="sender">SYSTEM:</span> Berjalan ke Pad Teleport untuk mula.</div>
             </div>
-            <div id="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Mesej... (Tekan Enter)">
-            </div>
+            <input type="text" id="chat-input" placeholder="Mesej... (Tekan Enter)">
         </div>
     </div>
 
-    <!-- Math Modal Popup -->
     <div class="overlay-screen interactive" id="math-modal">
         <h1 id="math-title" style="font-size: 20px; color: #00f3ff;">PENGESAHAN MATH</h1>
         <p id="math-desc" style="font-size: 12px; color: #aaa; margin-top: 5px;">Selesaikan pengiraan di bawah:</p>
@@ -108,7 +99,6 @@
         <button class="btn" onclick="submitMathAnswer()">HANTAR JAWAPAN</button>
     </div>
 
-    <!-- Fasa Kedai Screen -->
     <div class="overlay-screen interactive" id="shop-screen" style="width: 420px;">
         <h1 style="color: #00f3ff;">FASA KEDAI & UPGRADE</h1>
         <h3 style="color: #ff0055; font-size: 12px; margin-bottom: 15px;">Misi Rumah Terbiar Berjaya</h3>
@@ -116,15 +106,6 @@
             Hasil jualan pusingan ini: <b id="earned-cash" style="color:#00ff66;">+$0</b><br>
             Jumlah Wang Tunai: <b id="total-cash" style="color:#00f3ff;">$0</b>
         </p>
-
-        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <div style="font-weight: bold; font-size: 14px;">Kit Rawatan Medkit (+30 HP)</div>
-                <div style="font-size: 11px; color: #889;">Memulihkan kesihatan watak.</div>
-            </div>
-            <button class="btn" style="width: 90px; margin: 0; padding: 8px;" onclick="buyUpgrade('heal')">$30</button>
-        </div>
-
         <button class="btn btn-green" style="margin-top: 15px;" onclick="startNextRun()">PULANG KE LOBBY</button>
     </div>
 
@@ -133,7 +114,6 @@
         let isMathOpen = false, isShopOpen = false, isChatFocus = false;
         let audioCtx = null;
 
-        // Player & Game State
         let player = {
             name: "Agent_01",
             x: 0, z: 0,
@@ -141,7 +121,7 @@
             hp: 100, cash: 0,
             bagCount: 0, maxBag: 3,
             hasWheelbarrow: false,
-            currentZone: 'LOBBY' // LOBBY or MAP
+            currentZone: 'LOBBY'
         };
 
         let keys = { w: false, a: false, s: false, d: false };
@@ -152,7 +132,6 @@
         const GRID_SIZE = 8;
         const TILE_SIZE = 4;
 
-        // Map layout Rumah Terbiar
         const abandonedHouseMap = [
             ['P', '.', '.', 'X', '.', '.', '.', '.'],
             ['.', 'X', '.', 'D', '.', 'X', 'L', '.'],
@@ -164,7 +143,6 @@
             ['L', '.', '.', '.', '.', 'L', '.', 'S']
         ];
 
-        // Sound Synth
         function playSound(type) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
@@ -186,13 +164,6 @@
                 gain.gain.setValueAtTime(0.08, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
                 osc.start(now); osc.stop(now + 0.2);
-            } else if (type === 'cash') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(900, now);
-                osc.frequency.setValueAtTime(1200, now + 0.08);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
             }
         }
 
@@ -206,7 +177,13 @@
 
             init3DGame();
             build3DLobby();
-            document.body.requestPointerLock();
+            lockPointer();
+        }
+
+        function lockPointer() {
+            if (!isMathOpen && !isShopOpen && !isChatFocus) {
+                document.body.requestPointerLock();
+            }
         }
 
         function init3DGame() {
@@ -219,13 +196,6 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(renderer.domElement);
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.2);
-            scene.add(ambient);
-
-            const flashLight = new THREE.PointLight(0x00f3ff, 1.2, 12);
-            camera.add(flashLight);
-            scene.add(camera);
-
             setupPointerLockAndChat();
 
             window.addEventListener('keydown', e => handleKey(e, true));
@@ -235,7 +205,6 @@
             animate();
         }
 
-        // BINA LOBBY 3D (KAWASAN HUB)
         function build3DLobby() {
             clearScene();
             player.currentZone = 'LOBBY';
@@ -243,32 +212,22 @@
             document.getElementById('loc-banner').innerText = "3D LOBBY: BERJALAN KE PAD TELEPORT";
             scene.fog = new THREE.FogExp2(0x0a0c16, 0.02);
 
-            // Lantai Lobby Futuristik
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x121626, roughness: 0.3, metalness: 0.5 });
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x121626, roughness: 0.3 });
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), floorMat);
             floor.rotation.x = -Math.PI / 2;
             scene.add(floor);
 
-            // Dinding Sempadan Lobby
             const barrierMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, wireframe: true });
             const b = new THREE.Mesh(new THREE.BoxGeometry(30, 6, 30), barrierMat);
             b.position.y = 3;
             scene.add(b);
             colliders.push(new THREE.Box3().setFromObject(b));
 
-            // Teleport Pad 1: Solo Mode (Rumah Terbiar)
-            const pad1 = new THREE.Mesh(
-                new THREE.CylinderGeometry(2, 2, 0.2, 16),
-                new THREE.MeshBasicMaterial({ color: 0x00f3ff })
-            );
+            const pad1 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 16), new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
             pad1.position.set(-6, 0.1, -6);
             scene.add(pad1);
 
-            // Teleport Pad 2: Online Multiplayer Mode
-            const pad2 = new THREE.Mesh(
-                new THREE.CylinderGeometry(2, 2, 0.2, 16),
-                new THREE.MeshBasicMaterial({ color: 0xff0055 })
-            );
+            const pad2 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 16), new THREE.MeshBasicMaterial({ color: 0xff0055 }));
             pad2.position.set(6, 0.1, -6);
             scene.add(pad2);
 
@@ -276,32 +235,22 @@
                 { mesh: pad1, x: -6, z: -6, mode: 'SOLO_HOUSE', label: "RUMAH TERBIAR (SOLO)" },
                 { mesh: pad2, x: 6, z: -6, mode: 'ONLINE_HOUSE', label: "RUMAH TERBIAR (ONLINE)" }
             ];
-
-            addChatMessage("SYSTEM", "Anda kini berada di 3D Lobby. Berjalan ke pad BIRU atau MERAH untuk diteleport!");
         }
 
-        // BINA MAP RUMAH TERBIAR (ABANDONED HOUSE)
         function buildAbandonedHouseMap() {
             clearScene();
             player.currentZone = 'MAP';
             player.x = 2; player.z = 2;
             document.getElementById('loc-banner').innerText = "RUMAH TERBIAR (ABANDONED HOUSE)";
-            document.getElementById('loc-banner').style.borderColor = "#ff0055";
-            document.getElementById('loc-banner').style.color = "#ff0055";
-
-            // Ambient Creepy Fog
             scene.fog = new THREE.FogExp2(0x050403, 0.08);
 
             const mapWidth = GRID_SIZE * TILE_SIZE;
-
-            // Lantai Kayu usang / Simen Berabuk
             const floorMat = new THREE.MeshStandardMaterial({ color: 0x221c16, roughness: 0.9 });
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.position.set(mapWidth/2, 0, mapWidth/2);
             scene.add(floor);
 
-            // Outer Perimeter Barriers
             const barrierMat = new THREE.MeshStandardMaterial({ color: 0x3a2e2b, roughness: 0.9 });
             const bNorth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, 5, 1), barrierMat);
             bNorth.position.set(mapWidth/2, 2.5, -0.5);
@@ -315,7 +264,6 @@
             scene.add(bNorth, bSouth, bWest, bEast);
             [bNorth, bSouth, bWest, bEast].forEach(b => colliders.push(new THREE.Box3().setFromObject(b)));
 
-            // Dinding Kayu & Bilik Rumah Terbiar
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
                     const type = abandonedHouseMap[r][c];
@@ -323,38 +271,22 @@
                     const posZ = r * TILE_SIZE + TILE_SIZE/2;
 
                     if (type === 'X') {
-                        // Dinding Usang Rumah
-                        const wall = new THREE.Mesh(
-                            new THREE.BoxGeometry(TILE_SIZE, 4.5, TILE_SIZE),
-                            new THREE.MeshStandardMaterial({ color: 0x1a1410, roughness: 0.9 })
-                        );
+                        const wall = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE, 4.5, TILE_SIZE), new THREE.MeshStandardMaterial({ color: 0x1a1410 }));
                         wall.position.set(posX, 2.25, posZ);
                         scene.add(wall);
                         colliders.push(new THREE.Box3().setFromObject(wall));
                     } else if (type === 'D') {
-                        // Pintu Kayu Terkunci
-                        const door = new THREE.Mesh(
-                            new THREE.BoxGeometry(TILE_SIZE, 4, 0.3),
-                            new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.7 })
-                        );
+                        const door = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE, 4, 0.3), new THREE.MeshStandardMaterial({ color: 0x5c3a21 }));
                         door.position.set(posX, 2, posZ);
                         scene.add(door);
                         doorObjects.push({ mesh: door, x: posX, z: posZ, locked: true });
                     } else if (type === 'L') {
-                        // Peti Barangan Berharga
-                        const box = new THREE.Mesh(
-                            new THREE.BoxGeometry(1.2, 1.2, 1.2),
-                            new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.4 })
-                        );
+                        const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0xff0055 }));
                         box.position.set(posX, 0.6, posZ);
                         scene.add(box);
                         lootObjects.push({ mesh: box, x: posX, z: posZ, collected: false });
                     } else if (type === 'S') {
-                        // Extraction Pad
-                        const pad = new THREE.Mesh(
-                            new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16),
-                            new THREE.MeshBasicMaterial({ color: 0x00ff66 })
-                        );
+                        const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
                         pad.position.set(posX, 0.05, posZ);
                         scene.add(pad);
                         extractionZone = { x: posX, z: posZ };
@@ -362,23 +294,12 @@
                 }
             }
 
-            // Lampu Malap Rumah Terbiar
-            const dimLight1 = new THREE.PointLight(0xffaa55, 0.8, 15);
-            dimLight1.position.set(8, 3.5, 8);
-            const dimLight2 = new THREE.PointLight(0xffaa55, 0.8, 15);
-            dimLight2.position.set(24, 3.5, 24);
-            scene.add(dimLight1, dimLight2);
-
-            // Wheelbarrow at Start
             createWheelbarrow(3.5, 3.5);
         }
 
         function createWheelbarrow(x, z) {
             const group = new THREE.Group();
-            const body = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 0.5, 0.8),
-                new THREE.MeshStandardMaterial({ color: 0xffcc00, metalness: 0.6 })
-            );
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 0.8), new THREE.MeshStandardMaterial({ color: 0xffcc00 }));
             body.position.y = 0.5;
             group.add(body);
             group.position.set(x, 0, z);
@@ -387,14 +308,9 @@
         }
 
         function clearScene() {
-            colliders = [];
-            lootObjects = [];
-            doorObjects = [];
-            teleporters = [];
+            colliders = []; lootObjects = []; doorObjects = []; teleporters = [];
             if (scene) {
-                while(scene.children.length > 0){ 
-                    scene.remove(scene.children[0]); 
-                }
+                while(scene.children.length > 0){ scene.remove(scene.children[0]); }
                 const ambient = new THREE.AmbientLight(0xffffff, 0.2);
                 scene.add(ambient);
                 const flashLight = new THREE.PointLight(0x00f3ff, 1.2, 12);
@@ -411,6 +327,15 @@
                 if (e.key === 'Enter') sendChatMessage();
             });
 
+            document.addEventListener('pointerlockchange', () => {
+                const overlay = document.getElementById('click-to-move-overlay');
+                if (document.pointerLockElement === document.body) {
+                    overlay.style.display = 'none';
+                } else if (!isMathOpen && !isShopOpen && !isChatFocus && player.currentZone !== 'MENU') {
+                    overlay.style.display = 'flex';
+                }
+            });
+
             document.addEventListener('mousemove', (e) => {
                 if (document.pointerLockElement !== document.body || isMathOpen || isShopOpen || isChatFocus) return;
                 player.yaw -= e.movementX * 0.002;
@@ -421,29 +346,22 @@
 
         function handleKey(e, isDown) {
             if (isChatFocus) return;
-            const k = e.code;
-            if (k === 'KeyW') keys.w = isDown;
-            if (k === 'KeyS') keys.s = isDown;
-            if (k === 'KeyA') keys.a = isDown;
-            if (k === 'KeyD') keys.d = isDown;
+            const k = e.key.toLowerCase();
+            if (k === 'w') keys.w = isDown;
+            if (k === 's') keys.s = isDown;
+            if (k === 'a') keys.a = isDown;
+            if (k === 'd') keys.d = isDown;
         }
 
         function sendChatMessage() {
             const inputEl = document.getElementById('chat-input');
             const msg = inputEl.value.trim();
             if (msg) {
-                addChatMessage(player.name, msg);
+                const chatBox = document.getElementById('chat-messages');
+                chatBox.innerHTML += `<div class="chat-msg"><span class="sender">${player.name}:</span> ${msg}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
                 inputEl.value = '';
             }
-        }
-
-        function addChatMessage(sender, text) {
-            const chatBox = document.getElementById('chat-messages');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'chat-msg';
-            msgDiv.innerHTML = `<span class="sender">${sender}:</span> ${text}`;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         function updatePlayerMovement() {
@@ -460,7 +378,6 @@
             let nextX = player.x + dx;
             let nextZ = player.z + dz;
 
-            // Collision Detection
             let playerBox = new THREE.Box3(
                 new THREE.Vector3(nextX - 0.4, 0.1, player.z - 0.4),
                 new THREE.Vector3(nextX + 0.4, 1.8, player.z + 0.4)
@@ -482,34 +399,26 @@
             camera.rotation.y = player.yaw;
             camera.rotation.x = player.pitch;
 
-            // TELEPORTATION CHECK (LOBBY ZONE)
             if (player.currentZone === 'LOBBY') {
                 teleporters.forEach(tp => {
-                    let dist = Math.hypot(player.x - tp.x, player.z - tp.z);
-                    if (dist < 1.5) {
+                    if (Math.hypot(player.x - tp.x, player.z - tp.z) < 1.5) {
                         playSound('teleport');
-                        addChatMessage("SYSTEM", `Diteleport ke ${tp.label}!`);
                         buildAbandonedHouseMap();
                     }
                 });
             }
 
-            // MAP INTERACTION (ABANDONED HOUSE)
             if (player.currentZone === 'MAP') {
-                // Wheelbarrow Pick
-                if (wheelbarrowMesh && !wheelbarrowMesh.picked) {
-                    if (Math.hypot(player.x - wheelbarrowMesh.x, player.z - wheelbarrowMesh.z) < 1.5) {
-                        wheelbarrowMesh.picked = true;
-                        player.hasWheelbarrow = true;
-                        wheelbarrowMesh.group.position.y = -10;
-                        document.getElementById('wheelbarrow-status').innerText = "🛒 Wheelbarrow (Kapasiti ∞)";
-                        document.getElementById('wheelbarrow-status').style.color = "#00ff66";
-                        playSound('beep');
-                        updateUI();
-                    }
+                if (wheelbarrowMesh && !wheelbarrowMesh.picked && Math.hypot(player.x - wheelbarrowMesh.x, player.z - wheelbarrowMesh.z) < 1.5) {
+                    wheelbarrowMesh.picked = true;
+                    player.hasWheelbarrow = true;
+                    wheelbarrowMesh.group.position.y = -10;
+                    document.getElementById('wheelbarrow-status').innerText = "🛒 Wheelbarrow (Kapasiti ∞)";
+                    document.getElementById('wheelbarrow-status').style.color = "#00ff66";
+                    playSound('beep');
+                    updateUI();
                 }
 
-                // Doors
                 doorObjects.forEach(door => {
                     if (door.locked && Math.hypot(player.x - door.x, player.z - door.z) < 1.8) {
                         triggerMathQuestion('DOOR', (correct) => {
@@ -519,7 +428,6 @@
                     }
                 });
 
-                // Loot
                 lootObjects.forEach(loot => {
                     if (!loot.collected && Math.hypot(player.x - loot.x, player.z - loot.z) < 1.5) {
                         if (!player.hasWheelbarrow && player.bagCount >= player.maxBag) return;
@@ -529,7 +437,6 @@
                     }
                 });
 
-                // Extraction
                 if (extractionZone && Math.hypot(player.x - extractionZone.x, player.z - extractionZone.z) < 1.5) {
                     openShopPhase();
                 }
@@ -560,7 +467,7 @@
             isMathOpen = false;
 
             if (activeMathTask) activeMathTask.callback(userAns === activeMathTask.ans);
-            document.body.requestPointerLock();
+            lockPointer();
         }
 
         function openShopPhase() {
@@ -571,38 +478,23 @@
             player.cash += earned;
             player.bagCount = 0;
 
-            playSound('cash');
             document.getElementById('earned-cash').innerText = `+$${earned}`;
             document.getElementById('total-cash').innerText = `$${player.cash}`;
             document.getElementById('shop-screen').style.display = 'block';
             updateUI();
         }
 
-        function buyUpgrade(type) {
-            if (type === 'heal' && player.cash >= 30) {
-                player.cash -= 30;
-                player.hp = Math.min(100, player.hp + 30);
-                playSound('cash');
-            }
-            document.getElementById('total-cash').innerText = `$${player.cash}`;
-            updateUI();
-        }
-
         function startNextRun() {
             document.getElementById('shop-screen').style.display = 'none';
             isShopOpen = false;
-
-            // Pulang ke Lobby
             build3DLobby();
             updateUI();
-            document.body.requestPointerLock();
+            lockPointer();
         }
 
         function updateUI() {
             document.getElementById('hp-val').innerText = `${player.hp} HP`;
-            document.getElementById('bag-val').innerText = player.hasWheelbarrow 
-                ? `${player.bagCount} / ∞` 
-                : `${player.bagCount} / ${player.maxBag}`;
+            document.getElementById('bag-val').innerText = player.hasWheelbarrow ? `${player.bagCount} / ∞` : `${player.bagCount} / ${player.maxBag}`;
         }
 
         function animate() {
