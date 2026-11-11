@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: Abandoned House Real Extraction</title>
+    <title>HAUL & RUN 3D: Abandoned House Extraction</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
@@ -18,7 +18,7 @@
 
         #loc-banner { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: #000; border: 1px solid #00f3ff; color: #00f3ff; padding: 6px 18px; border-radius: 20px; font-size: 12px; font-weight: bold; letter-spacing: 2px; }
 
-        /* Kawalan Touch/Click On-Screen */
+        /* Kawalan On-Screen Touch/Click */
         #dpad { position: absolute; bottom: 20px; left: 20px; display: grid; grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); gap: 5px; z-index: 25; pointer-events: auto; }
         .dbtn { background: rgba(0,243,255,0.25); border: 1px solid #00f3ff; color: #fff; font-weight: bold; font-size: 16px; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .dbtn:active { background: #00f3ff; color: #000; }
@@ -190,7 +190,6 @@
             teleporters = [{ x: -5, z: -5 }, { x: 5, z: -5 }];
         }
 
-        // FUNGSI JANA PERABOT 3D RUMAH TERBIAR REALISTIK
         function createAbandonedFurnitureMesh(typeIndex, posX, posZ) {
             const group = new THREE.Group();
 
@@ -235,7 +234,6 @@
 
             const mapWidth = GRID_SIZE * TILE_SIZE;
             
-            // Lantai Kayu Berabuk Rumah Terbiar (Tanpa Barrier Sekeliling Map)
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), new THREE.MeshStandardMaterial({ color: 0x1f1813, roughness: 0.95 }));
             floor.rotation.x = -Math.PI / 2;
             floor.position.set(mapWidth/2, 0, mapWidth/2);
@@ -249,7 +247,6 @@
                     const posZ = r * TILE_SIZE + TILE_SIZE/2;
 
                     if (type === 'X') {
-                        // Dinding Usang Bilik Dalam Rumah
                         const wall = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE, 4, TILE_SIZE), new THREE.MeshStandardMaterial({ color: 0x18130e, roughness: 0.9 }));
                         wall.position.set(posX, 2, posZ);
                         scene.add(wall);
@@ -260,7 +257,6 @@
                         scene.add(door);
                         doorObjects.push({ mesh: door, x: posX, z: posZ, locked: true });
                     } else if (type === 'L') {
-                        // Pembinaan Model 3D Perabot/Barang Terbiar
                         const fData = createAbandonedFurnitureMesh(lootIndex % 4, posX, posZ);
                         lootIndex++;
 
@@ -277,7 +273,6 @@
                 }
             }
 
-            // Lampu Malap Usang Khas Rumah Terbiar
             const dimLight = new THREE.PointLight(0xffaa55, 0.7, 12);
             dimLight.position.set(mapWidth/2, 3, mapWidth/2);
             scene.add(dimLight);
