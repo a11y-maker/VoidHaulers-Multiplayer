@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: Abandoned House Extraction</title>
+    <title>HAUL & RUN 3D: Realistic Extraction</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
         
         #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #00f3ff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 15; display: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #00f3ff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 15; display: none; box-shadow: 0 0 8px #00f3ff; }
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; z-index: 10; display: none; }
-        .hud-card { background: rgba(10, 12, 18, 0.85); border: 1px solid #00f3ff; padding: 10px 15px; border-radius: 8px; backdrop-filter: blur(5px); }
+        .hud-card { background: rgba(10, 12, 18, 0.85); border: 1px solid #00f3ff; padding: 10px 15px; border-radius: 8px; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
         .hud-title { font-size: 10px; color: #88a; text-transform: uppercase; letter-spacing: 1px; }
         .hud-val { font-size: 20px; font-weight: bold; color: #00f3ff; }
 
@@ -179,6 +179,11 @@
             floor.rotation.x = -Math.PI / 2;
             scene.add(floor);
 
+            const barrier = new THREE.Mesh(new THREE.BoxGeometry(30, 6, 30), new THREE.MeshStandardMaterial({ color: 0x00f3ff, wireframe: true }));
+            barrier.position.y = 3;
+            scene.add(barrier);
+            colliders.push({ x: -15, z: 0 }, { x: 15, z: 0 }, { x: 0, z: -15 }, { x: 0, z: 15 });
+
             const pad1 = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 16), new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
             pad1.position.set(-5, 0.1, -5);
             scene.add(pad1);
@@ -190,34 +195,46 @@
             teleporters = [{ x: -5, z: -5 }, { x: 5, z: -5 }];
         }
 
+        // BINA MODEL 3D BARANGAN RUMAH TERBIAR REALISTIK
         function createAbandonedFurnitureMesh(typeIndex, posX, posZ) {
             const group = new THREE.Group();
 
-            if (typeIndex === 0) { // TV CRT Buruk
-                const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.8), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 }));
+            if (typeIndex === 0) { // Televisyen CRT Buruk
+                const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.8), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 }));
                 body.position.y = 0.45;
                 const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.6), new THREE.MeshBasicMaterial({ color: 0x112233 }));
                 screen.position.set(0, 0.45, 0.41);
-                group.add(body, screen);
+                
+                const ant1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+                ant1.rotation.z = -0.4;
+                ant1.position.set(-0.2, 1.1, 0);
+
+                const ant2 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+                ant2.rotation.z = 0.4;
+                ant2.position.set(0.2, 1.1, 0);
+
+                group.add(body, screen, ant1, ant2);
                 return { mesh: group, name: "Televisyen CRT Buruk" };
             } 
             else if (typeIndex === 1) { // Peti Besi Karat
-                const safe = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 1.0), new THREE.MeshStandardMaterial({ color: 0x4a3b2c, metalness: 0.6, roughness: 0.8 }));
+                const safe = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 1.0), new THREE.MeshStandardMaterial({ color: 0x4a3b2c, metalness: 0.7, roughness: 0.6 }));
                 safe.position.y = 0.6;
-                const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 12), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+                const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 12), new THREE.MeshStandardMaterial({ color: 0xccaa00, metalness: 0.8 }));
                 dial.rotation.x = Math.PI/2;
                 dial.position.set(0, 0.6, 0.52);
                 group.add(safe, dial);
                 return { mesh: group, name: "Peti Besi Karat" };
             }
             else if (typeIndex === 2) { // Kabinet Kayu Usang
-                const cab = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.6, 0.8), new THREE.MeshStandardMaterial({ color: 0x5c4028, roughness: 0.9 }));
+                const cab = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.6, 0.8), new THREE.MeshStandardMaterial({ color: 0x422d1b, roughness: 0.9 }));
                 cab.position.y = 0.8;
-                group.add(cab);
+                const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                handle.position.set(0.2, 0.8, 0.42);
+                group.add(cab, handle);
                 return { mesh: group, name: "Kabinet Kayu Usang" };
             }
             else { // Kotak Kayu Repot
-                const box = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 1.1), new THREE.MeshStandardMaterial({ color: 0x6e5338, roughness: 0.95 }));
+                const box = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 1.1), new THREE.MeshStandardMaterial({ color: 0x5e452e, roughness: 0.95 }));
                 box.position.y = 0.55;
                 group.add(box);
                 return { mesh: group, name: "Kotak Kayu Repot" };
@@ -230,14 +247,36 @@
             player.x = 2; player.z = 2;
             document.getElementById('loc-banner').innerText = "RUMAH TERBIAR (ABANDONED HOUSE)";
 
-            scene.fog = new THREE.FogExp2(0x0a0806, 0.06);
+            scene.fog = new THREE.FogExp2(0x0a0806, 0.05);
 
             const mapWidth = GRID_SIZE * TILE_SIZE;
             
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), new THREE.MeshStandardMaterial({ color: 0x1f1813, roughness: 0.95 }));
+            // Lantai Kayu Berabuk Rumah Terbiar
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), new THREE.MeshStandardMaterial({ color: 0x1a130e, roughness: 0.95 }));
             floor.rotation.x = -Math.PI / 2;
             floor.position.set(mapWidth/2, 0, mapWidth/2);
             scene.add(floor);
+
+            // BINA DINDING BARRIER SEKELILING MAP (OUTER BARRIER)
+            const bMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.3, metalness: 0.8, wireframe: false });
+            const bThick = 1, bH = 5;
+
+            const bNorth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, bH, bThick), bMat);
+            bNorth.position.set(mapWidth/2, bH/2, -bThick/2);
+            const bSouth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, bH, bThick), bMat);
+            bSouth.position.set(mapWidth/2, bH/2, mapWidth + bThick/2);
+            const bWest = new THREE.Mesh(new THREE.BoxGeometry(bThick, bH, mapWidth + 2), bMat);
+            bWest.position.set(-bThick/2, bH/2, mapWidth/2);
+            const bEast = new THREE.Mesh(new THREE.BoxGeometry(bThick, bH, mapWidth + 2), bMat);
+            bEast.position.set(mapWidth + bThick/2, bH/2, mapWidth/2);
+
+            scene.add(bNorth, bSouth, bWest, bEast);
+            colliders.push(
+                { x: mapWidth/2, z: -bThick/2 },
+                { x: mapWidth/2, z: mapWidth + bThick/2 },
+                { x: -bThick/2, z: mapWidth/2 },
+                { x: mapWidth + bThick/2, z: mapWidth/2 }
+            );
 
             let lootIndex = 0;
             for (let r = 0; r < GRID_SIZE; r++) {
@@ -263,6 +302,11 @@
                         fData.mesh.position.set(posX, 0, posZ);
                         scene.add(fData.mesh);
 
+                        // Lampu Sorot Khas di atas Barang
+                        const itemLight = new THREE.PointLight(0xffaa55, 0.8, 4);
+                        itemLight.position.set(posX, 2, posZ);
+                        scene.add(itemLight);
+
                         lootObjects.push({ mesh: fData.mesh, x: posX, z: posZ, name: fData.name, collected: false });
                     } else if (type === 'S') {
                         const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
@@ -272,10 +316,6 @@
                     }
                 }
             }
-
-            const dimLight = new THREE.PointLight(0xffaa55, 0.7, 12);
-            dimLight.position.set(mapWidth/2, 3, mapWidth/2);
-            scene.add(dimLight);
 
             createWheelbarrow(3.5, 3.5);
         }
@@ -296,8 +336,13 @@
                 while(scene.children.length > 0){ scene.remove(scene.children[0]); }
                 const ambient = new THREE.AmbientLight(0xffffff, 0.25);
                 scene.add(ambient);
-                const light = new THREE.PointLight(0x00f3ff, 1.3, 14);
-                camera.add(light);
+
+                // FlashLight Kon Utama Pemain
+                const spotLight = new THREE.SpotLight(0x00f3ff, 2, 20, Math.PI / 4, 0.5);
+                spotLight.position.set(0, 0, 0);
+                camera.add(spotLight);
+                spotLight.target = camera;
+
                 scene.add(camera);
             }
         }
@@ -318,7 +363,7 @@
 
             let canMove = true;
             for (let c of colliders) {
-                if (Math.hypot(nextX - c.x, nextZ - c.z) < 2.0) {
+                if (Math.hypot(nextX - c.x, nextZ - c.z) < 1.8) {
                     canMove = false;
                     break;
                 }
