@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: Flashlight Toggle Edition</title>
+    <title>HAUL & RUN 3D: High-Power Flashlight Edition</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
@@ -23,8 +23,8 @@
         .dbtn { background: rgba(0,243,255,0.25); border: 1px solid #00f3ff; color: #fff; font-weight: bold; font-size: 16px; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .dbtn:active { background: #00f3ff; color: #000; }
 
-        /* Flashlight Toggle Button (Mobile/Touch Friendly) */
-        #flashlight-btn { position: absolute; bottom: 20px; right: 20px; width: 70px; height: 70px; background: rgba(255,204,0,0.2); border: 2px solid #ffcc00; color: #ffcc00; font-weight: bold; font-size: 12px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; z-index: 25; pointer-events: auto; backdrop-filter: blur(4px); }
+        /* Flashlight Toggle Button */
+        #flashlight-btn { position: absolute; bottom: 20px; right: 20px; width: 70px; height: 70px; background: rgba(255,204,0,0.25); border: 2px solid #ffcc00; color: #ffcc00; font-weight: bold; font-size: 12px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; z-index: 25; pointer-events: auto; backdrop-filter: blur(4px); box-shadow: 0 0 15px rgba(255,204,0,0.4); }
         #flashlight-btn:active { background: #ffcc00; color: #000; }
 
         /* Muka Depan */
@@ -86,7 +86,6 @@
             <div class="dbtn" onmousedown="keys.d=true" onmouseup="keys.d=false" ontouchstart="keys.d=true" ontouchend="keys.d=false">►</div>
         </div>
 
-        <!-- Touch Toggle Button for Flashlight -->
         <div id="flashlight-btn" onclick="toggleFlashlight()">
             <span style="font-size: 18px;">🔦</span>
             <span>[F]</span>
@@ -122,7 +121,8 @@
             hasWheelbarrow: false, currentZone: 'LOBBY', flashlightOn: true 
         };
         
-        let flashlightLight = null;
+        let flashlightSpotLight = null;
+        let flashlightTargetObject = null;
         let keys = { w: false, a: false, s: false, d: false };
         let activeMathTask = null, colliders = [], lootObjects = [], doorObjects = [], teleporters = [], wheelbarrowMesh = null, extractionZone = null;
 
@@ -148,19 +148,19 @@
             const now = audioCtx.currentTime;
 
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(800, now);
-            osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
-            gain.gain.setValueAtTime(0.1, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.frequency.setValueAtTime(900, now);
+            osc.frequency.exponentialRampToValueAtTime(300, now + 0.04);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
             osc.start(now);
-            osc.stop(now + 0.05);
+            osc.stop(now + 0.04);
         }
 
         function toggleFlashlight() {
             player.flashlightOn = !player.flashlightOn;
-            if (flashlightLight) {
-                flashlightLight.visible = player.flashlightOn;
+            if (flashlightSpotLight) {
+                flashlightSpotLight.visible = player.flashlightOn;
             }
             const statusEl = document.getElementById('flashlight-status');
             if (player.flashlightOn) {
@@ -211,7 +211,6 @@
                 if (k === 'a' || e.key === 'ArrowLeft') keys.a = true;
                 if (k === 'd' || e.key === 'ArrowRight') keys.d = true;
 
-                // Kekunci F untuk Buka/Tutup Lampu Suluh
                 if (k === 'f' && !isMathOpen && !isShopOpen) {
                     toggleFlashlight();
                 }
@@ -226,6 +225,20 @@
             });
 
             animate();
+        }
+
+        function setupFlashlight() {
+            // High-Power SpotLight Attachment
+            flashlightSpotLight = new THREE.SpotLight(0xffffff, 12.0, 45, Math.PI / 5, 0.3, 1);
+            flashlightSpotLight.position.set(0, 0, 0);
+
+            flashlightTargetObject = new THREE.Object3D();
+            flashlightTargetObject.position.set(0, 0, -5);
+            camera.add(flashlightTargetObject);
+
+            flashlightSpotLight.target = flashlightTargetObject;
+            flashlightSpotLight.visible = player.flashlightOn;
+            camera.add(flashlightSpotLight);
         }
 
         function build3DLobby() {
@@ -305,7 +318,7 @@
             player.x = 2; player.z = 2;
             document.getElementById('loc-banner').innerText = "RUMAH TERBIAR (ABANDONED HOUSE)";
 
-            scene.fog = new THREE.FogExp2(0x0a0806, 0.05);
+            scene.fog = new THREE.FogExp2(0x050403, 0.08);
 
             const mapWidth = GRID_SIZE * TILE_SIZE;
             
@@ -359,10 +372,6 @@
                         fData.mesh.position.set(posX, 0, posZ);
                         scene.add(fData.mesh);
 
-                        const itemLight = new THREE.PointLight(0xffaa55, 0.8, 4);
-                        itemLight.position.set(posX, 2, posZ);
-                        scene.add(itemLight);
-
                         lootObjects.push({ mesh: fData.mesh, x: posX, z: posZ, name: fData.name, collected: false });
                     } else if (type === 'S') {
                         const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
@@ -390,16 +399,12 @@
             colliders = []; lootObjects = []; doorObjects = []; teleporters = [];
             if (scene) {
                 while(scene.children.length > 0){ scene.remove(scene.children[0]); }
-                const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+                
+                // Low Ambient Light for Dark Creepy Atmosphere
+                const ambient = new THREE.AmbientLight(0xffffff, 0.05);
                 scene.add(ambient);
 
-                // FlashLight Kon Utama Pemain (Boleh Buka/Tutup dengan F)
-                flashlightLight = new THREE.SpotLight(0x00f3ff, 2.5, 22, Math.PI / 4, 0.5);
-                flashlightLight.position.set(0, 0, 0);
-                flashlightLight.visible = player.flashlightOn;
-                camera.add(flashlightLight);
-                flashlightLight.target = camera;
-
+                setupFlashlight();
                 scene.add(camera);
             }
         }
