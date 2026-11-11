@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAUL & RUN 3D: Realistic Extraction</title>
+    <title>HAUL & RUN 3D: Flashlight Toggle Edition</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body { background: #050608; color: #fff; overflow: hidden; height: 100vh; width: 100vw; }
@@ -22,6 +22,10 @@
         #dpad { position: absolute; bottom: 20px; left: 20px; display: grid; grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); gap: 5px; z-index: 25; pointer-events: auto; }
         .dbtn { background: rgba(0,243,255,0.25); border: 1px solid #00f3ff; color: #fff; font-weight: bold; font-size: 16px; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .dbtn:active { background: #00f3ff; color: #000; }
+
+        /* Flashlight Toggle Button (Mobile/Touch Friendly) */
+        #flashlight-btn { position: absolute; bottom: 20px; right: 20px; width: 70px; height: 70px; background: rgba(255,204,0,0.2); border: 2px solid #ffcc00; color: #ffcc00; font-weight: bold; font-size: 12px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; z-index: 25; pointer-events: auto; backdrop-filter: blur(4px); }
+        #flashlight-btn:active { background: #ffcc00; color: #000; }
 
         /* Muka Depan */
         #main-menu { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, #121626 0%, #050608 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
@@ -62,8 +66,12 @@
                 <div class="hud-val" id="hp-val" style="color: #ff0055;">100</div>
             </div>
             <div class="hud-card" style="text-align: center;">
+                <div class="hud-title">LAMPU SULUH [F]</div>
+                <div class="hud-val" id="flashlight-status" style="color: #00ff66; font-size: 14px; margin-top: 5px;">ON</div>
+            </div>
+            <div class="hud-card" style="text-align: center;">
                 <div class="hud-title">ALATAN</div>
-                <div class="hud-val" id="wheelbarrow-status" style="color: #ffcc00; font-size: 14px;">Tiada Wheelbarrow</div>
+                <div class="hud-val" id="wheelbarrow-status" style="color: #ffcc00; font-size: 14px; margin-top: 5px;">Tiada Wheelbarrow</div>
             </div>
             <div class="hud-card" style="text-align: right;">
                 <div class="hud-title">BEG MUATAN</div>
@@ -76,6 +84,12 @@
             <div class="dbtn" onmousedown="keys.a=true" onmouseup="keys.a=false" ontouchstart="keys.a=true" ontouchend="keys.a=false">◄</div>
             <div class="dbtn" onmousedown="keys.s=true" onmouseup="keys.s=false" ontouchstart="keys.s=true" ontouchend="keys.s=false">▼</div>
             <div class="dbtn" onmousedown="keys.d=true" onmouseup="keys.d=false" ontouchstart="keys.d=true" ontouchend="keys.d=false">►</div>
+        </div>
+
+        <!-- Touch Toggle Button for Flashlight -->
+        <div id="flashlight-btn" onclick="toggleFlashlight()">
+            <span style="font-size: 18px;">🔦</span>
+            <span>[F]</span>
         </div>
     </div>
 
@@ -101,8 +115,14 @@
     <script>
         let scene, camera, renderer;
         let isMathOpen = false, isShopOpen = false;
+        let audioCtx = null;
 
-        let player = { x: 0, z: 0, pitch: 0, yaw: 0, hp: 100, cash: 0, bagCount: 0, maxBag: 3, hasWheelbarrow: false, currentZone: 'LOBBY' };
+        let player = { 
+            x: 0, z: 0, pitch: 0, yaw: 0, hp: 100, cash: 0, bagCount: 0, maxBag: 3, 
+            hasWheelbarrow: false, currentZone: 'LOBBY', flashlightOn: true 
+        };
+        
+        let flashlightLight = null;
         let keys = { w: false, a: false, s: false, d: false };
         let activeMathTask = null, colliders = [], lootObjects = [], doorObjects = [], teleporters = [], wheelbarrowMesh = null, extractionZone = null;
 
@@ -118,6 +138,40 @@
             ['X', 'X', '.', 'X', 'X', 'X', '.', 'D'],
             ['L', '.', '.', '.', '.', 'L', '.', 'S']
         ];
+
+        function playClickSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+            osc.start(now);
+            osc.stop(now + 0.05);
+        }
+
+        function toggleFlashlight() {
+            player.flashlightOn = !player.flashlightOn;
+            if (flashlightLight) {
+                flashlightLight.visible = player.flashlightOn;
+            }
+            const statusEl = document.getElementById('flashlight-status');
+            if (player.flashlightOn) {
+                statusEl.innerText = "ON";
+                statusEl.style.color = "#00ff66";
+            } else {
+                statusEl.innerText = "OFF";
+                statusEl.style.color = "#ff0055";
+            }
+            playClickSound();
+        }
 
         function startLobby() {
             document.getElementById('main-menu').style.display = 'none';
@@ -156,6 +210,11 @@
                 if (k === 's' || e.key === 'ArrowDown') keys.s = true;
                 if (k === 'a' || e.key === 'ArrowLeft') keys.a = true;
                 if (k === 'd' || e.key === 'ArrowRight') keys.d = true;
+
+                // Kekunci F untuk Buka/Tutup Lampu Suluh
+                if (k === 'f' && !isMathOpen && !isShopOpen) {
+                    toggleFlashlight();
+                }
             });
 
             window.addEventListener('keyup', (e) => {
@@ -195,11 +254,10 @@
             teleporters = [{ x: -5, z: -5 }, { x: 5, z: -5 }];
         }
 
-        // BINA MODEL 3D BARANGAN RUMAH TERBIAR REALISTIK
         function createAbandonedFurnitureMesh(typeIndex, posX, posZ) {
             const group = new THREE.Group();
 
-            if (typeIndex === 0) { // Televisyen CRT Buruk
+            if (typeIndex === 0) { // TV CRT Buruk
                 const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.8), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7 }));
                 body.position.y = 0.45;
                 const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.6), new THREE.MeshBasicMaterial({ color: 0x112233 }));
@@ -251,14 +309,13 @@
 
             const mapWidth = GRID_SIZE * TILE_SIZE;
             
-            // Lantai Kayu Berabuk Rumah Terbiar
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(mapWidth, mapWidth), new THREE.MeshStandardMaterial({ color: 0x1a130e, roughness: 0.95 }));
             floor.rotation.x = -Math.PI / 2;
             floor.position.set(mapWidth/2, 0, mapWidth/2);
             scene.add(floor);
 
-            // BINA DINDING BARRIER SEKELILING MAP (OUTER BARRIER)
-            const bMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.3, metalness: 0.8, wireframe: false });
+            // Barrier Outer Perimeter
+            const bMat = new THREE.MeshStandardMaterial({ color: 0x00f3ff, roughness: 0.3, metalness: 0.8 });
             const bThick = 1, bH = 5;
 
             const bNorth = new THREE.Mesh(new THREE.BoxGeometry(mapWidth + 2, bH, bThick), bMat);
@@ -302,7 +359,6 @@
                         fData.mesh.position.set(posX, 0, posZ);
                         scene.add(fData.mesh);
 
-                        // Lampu Sorot Khas di atas Barang
                         const itemLight = new THREE.PointLight(0xffaa55, 0.8, 4);
                         itemLight.position.set(posX, 2, posZ);
                         scene.add(itemLight);
@@ -334,14 +390,15 @@
             colliders = []; lootObjects = []; doorObjects = []; teleporters = [];
             if (scene) {
                 while(scene.children.length > 0){ scene.remove(scene.children[0]); }
-                const ambient = new THREE.AmbientLight(0xffffff, 0.25);
+                const ambient = new THREE.AmbientLight(0xffffff, 0.2);
                 scene.add(ambient);
 
-                // FlashLight Kon Utama Pemain
-                const spotLight = new THREE.SpotLight(0x00f3ff, 2, 20, Math.PI / 4, 0.5);
-                spotLight.position.set(0, 0, 0);
-                camera.add(spotLight);
-                spotLight.target = camera;
+                // FlashLight Kon Utama Pemain (Boleh Buka/Tutup dengan F)
+                flashlightLight = new THREE.SpotLight(0x00f3ff, 2.5, 22, Math.PI / 4, 0.5);
+                flashlightLight.position.set(0, 0, 0);
+                flashlightLight.visible = player.flashlightOn;
+                camera.add(flashlightLight);
+                flashlightLight.target = camera;
 
                 scene.add(camera);
             }
